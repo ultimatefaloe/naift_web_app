@@ -7,3 +7,8 @@ class CorePagesTests(TestCase):
         response = self.client.get(reverse("core:home"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/home.html")
+
+    def test_about_page_returns_200(self):
+        response = self.client.get(reverse("core:about"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "core/about.html")

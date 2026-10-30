@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'django.contrib.staticfiles',
     'cloudinary',
+    'tailwind',
+    'theme',
 ]
 
 MIDDLEWARE = [
@@ -128,6 +130,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 MEDIA_URL = 'media/'
+
+TAILWIND_APP_NAME = 'theme'
 
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),

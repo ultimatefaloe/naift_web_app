@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/**
+  * A catch-all path to Django template files, JavaScript, and Python files
+  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
+  */
+@source "../../../**/*.{html,py,js}";
+
+@theme static {
+  --color-brand-purple: #4C1D95;
+  --color-brand-black: #0A0A0A;
+  --color-brand-white: #FFFFFF;
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", sans-serif;
+}

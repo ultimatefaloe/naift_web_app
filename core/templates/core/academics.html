@@ -1,10 +1,13 @@
 {% extends "core/base.html" %}
+{% load static %}
 
 {% block title %}Academics · NAIFT{% endblock %}
 
 {% block content %}
 <section class="px-6 py-16 max-w-4xl mx-auto" data-aos="fade-up">
     <h1 class="font-display text-4xl text-brand-purple mb-8">Academics</h1>
+
+    <img src="{% static 'image/academics-coding.jpg' %}" alt="Student coding on a laptop" class="w-full h-64 md:h-80 object-cover rounded-lg shadow-lg mb-8" data-aos="zoom-in">
 
     <h2 class="font-display text-2xl text-brand-black mb-3">Programme Philosophy</h2>
     <p class="text-lg leading-relaxed mb-8">

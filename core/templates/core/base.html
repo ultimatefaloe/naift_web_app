@@ -14,8 +14,8 @@
 <body class="bg-brand-white text-brand-black font-body">
     <header class="flex items-center justify-between px-6 py-4 border-b border-brand-black/10">
         <div class="flex items-center gap-3">
-            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-12 w-12 rounded-full object-cover">
-            <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-12 w-12 rounded-full object-cover">
+            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-12 w-12 rounded-full object-cover logo-spin-hover">
+            <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-12 w-12 rounded-full object-cover logo-spin-hover">
             <span class="font-display text-xl text-brand-purple">NAIFT</span>
         </div>
         <nav class="flex items-center gap-6 font-body">
@@ -23,7 +23,7 @@
             <a href="{% url 'core:about' %}" class="hover:text-brand-purple">About</a>
             <a href="{% url 'core:academics' %}" class="hover:text-brand-purple">Academics</a>
             <a href="{% url 'executives:current' %}" class="hover:text-brand-purple">Executive</a>
-            <a href="#" class="bg-brand-purple text-brand-white px-4 py-2 rounded-full hover:opacity-90">Vote</a>
+            <a href="#" class="cta-bounce bg-brand-purple text-brand-white px-4 py-2 rounded-full hover:opacity-90">Vote</a>
         </nav>
     </header>
 

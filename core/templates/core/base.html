@@ -18,6 +18,13 @@
             <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-12 w-12 rounded-full object-cover">
             <span class="font-display text-xl text-brand-purple">NAIFT</span>
         </div>
+        <nav class="flex items-center gap-6 font-body">
+            <a href="{% url 'core:home' %}" class="hover:text-brand-purple">Home</a>
+            <a href="{% url 'core:about' %}" class="hover:text-brand-purple">About</a>
+            <a href="{% url 'core:academics' %}" class="hover:text-brand-purple">Academics</a>
+            <a href="{% url 'executives:current' %}" class="hover:text-brand-purple">Executive</a>
+            <a href="#" class="bg-brand-purple text-brand-white px-4 py-2 rounded-full hover:opacity-90">Vote</a>
+        </nav>
     </header>
 
     <main>

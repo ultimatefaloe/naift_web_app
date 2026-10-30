@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'theme',
     'core',
     'executives',
+    'admin_panel',
 ]
 
 MIDDLEWARE = [

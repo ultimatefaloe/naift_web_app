@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
+from django.db.models import ProtectedError
 from django.test import TestCase
 
 from admin_panel.models import AdminProfile
@@ -19,3 +20,8 @@ class PositionModelTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 Position.objects.create(title="President")
+
+    def test_deleting_admin_profile_with_position_is_protected(self):
+        Position.objects.create(title="President", modified_by=self.admin_profile)
+        with self.assertRaises(ProtectedError):
+            self.admin_profile.delete()

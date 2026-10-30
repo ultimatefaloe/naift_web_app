@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# Environment variables
+.env
+
+# Django
+*.sqlite3
+/media/
+/staticfiles/
+
+# Tailwind build output (rebuilt from theme/static_src via `manage.py tailwind`)
+theme/static/
+node_modules/
+
+# Editors / OS
+.DS_Store

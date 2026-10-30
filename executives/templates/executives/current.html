@@ -1,0 +1,27 @@
+{% extends "core/base.html" %}
+
+{% block title %}Current Executive · NAIFT{% endblock %}
+
+{% block content %}
+<section class="px-6 py-16 max-w-5xl mx-auto" data-aos="fade-up">
+    <h1 class="font-display text-4xl text-brand-purple mb-8">Current Executive</h1>
+
+    {% regroup executives by session as session_list %}
+    {% for session in session_list %}
+        <h2 class="font-display text-2xl text-brand-black mb-4">{{ session.grouper }}</h2>
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+            {% for executive in session.list %}
+                <div class="border border-brand-purple/20 rounded-lg p-5 text-center" data-aos="fade-up">
+                    {% if executive.photo %}
+                        <img src="{{ executive.photo.url }}" alt="{{ executive.name }}" class="h-32 w-32 rounded-full object-cover mx-auto mb-3">
+                    {% endif %}
+                    <h3 class="font-display text-lg text-brand-black">{{ executive.name }}</h3>
+                    <p class="text-brand-purple">{{ executive.position }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% empty %}
+        <p class="text-lg">No current executive has been published yet.</p>
+    {% endfor %}
+</section>
+{% endblock %}

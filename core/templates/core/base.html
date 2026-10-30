@@ -1,0 +1,38 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NAIFT{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" integrity="sha512-1cK78a1o+ht2JcaW6g8OXYwqpev9+6GqOkz9xmBN9iUUhIndKtxwILGWYOSibOKjLsEdjyjZvYDq/cZwNeak0w==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    {% tailwind_css %}
+</head>
+<body class="bg-brand-white text-brand-black font-body">
+    <header class="flex items-center justify-between px-6 py-4 border-b border-brand-black/10">
+        <div class="flex items-center gap-3">
+            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-12 w-12 rounded-full object-cover">
+            <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-12 w-12 rounded-full object-cover">
+            <span class="font-display text-xl text-brand-purple">NAIFT</span>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-brand-black text-brand-white px-6 py-8 mt-16">
+        <div class="flex items-center gap-3 mb-4">
+            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-10 w-10 rounded-full object-cover">
+            <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-10 w-10 rounded-full object-cover">
+        </div>
+        <p class="text-sm text-brand-white/70">Department of Information Technology &middot; School of Information and Communication Technology &middot; Federal University of Technology, Minna</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" integrity="sha512-A7AYk1fGKX6S2SsHywmPkrnzTZHrgiVT7GcQkLGDe2ev0aWb8zejytzS8wjo7PGEXKqJOrjQ4oORtnimIRZBtw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>AOS.init();</script>
+</body>
+</html>

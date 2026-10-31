@@ -94,8 +94,14 @@ def wizard_review(request):
         return redirect("voting:vote_entry")
     if Vote.objects.filter(student=request.student, election=election).exists():
         return redirect("voting:vote_entry")
+    positions = Position.objects.filter(contestants__election=election).distinct().order_by("title")
     picks = request.session.get("vote_picks", {})
-    selections = [get_object_or_404(Contestant, pk=contestant_id) for contestant_id in picks.values()]
+    for position in positions:
+        if str(position.id) not in picks:
+            return redirect("voting:vote_entry")
+    selections = [
+        get_object_or_404(Contestant, pk=contestant_id, election=election) for contestant_id in picks.values()
+    ]
     if request.method == "POST":
         with transaction.atomic():
             for contestant in selections:

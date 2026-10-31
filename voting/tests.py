@@ -314,3 +314,34 @@ class WizardReviewTests(TestCase):
         self.client.post(reverse("voting:wizard_review"))
         response = self.client.get(reverse("voting:vote_entry"))
         self.assertTemplateUsed(response, "voting/voted.html")
+
+    def test_post_with_incomplete_picks_does_not_create_votes_and_redirects_away(self):
+        other_position = Position.objects.create(
+            title="Vice President", modified_by=self.position.modified_by
+        )
+        Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=other_position, election=self.election
+        )
+        # setUp's session only has a pick for self.position, not other_position — incomplete.
+        response = self.client.post(reverse("voting:wizard_review"))
+        # vote_entry itself redirects onward to wizard_step for the still-unpicked position,
+        # so the fetched target is a second 302, not a 200 render.
+        self.assertRedirects(response, reverse("voting:vote_entry"), target_status_code=302)
+        self.assertEqual(Vote.objects.count(), 0)
+
+    def test_post_rejects_pick_from_a_different_election(self):
+        other_election = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            status="ended",
+            modified_by=self.position.modified_by,
+        )
+        stale_contestant = Contestant.objects.create(
+            name="Old Candidate", manifesto="Vote for me.", position=self.position, election=other_election
+        )
+        session = self.client.session
+        session["vote_picks"] = {str(self.position.pk): stale_contestant.pk}
+        session.save()
+        response = self.client.get(reverse("voting:wizard_review"))
+        self.assertEqual(response.status_code, 404)

@@ -9,11 +9,7 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("", views.vote_entry, name="vote_entry"),
-    path(
-        "position/<int:position_id>/",
-        TemplateView.as_view(template_name="voting/login.html"),
-        name="wizard_step",
-    ),
+    path("position/<int:position_id>/", views.wizard_step, name="wizard_step"),
     path(
         "review/",
         TemplateView.as_view(template_name="voting/login.html"),

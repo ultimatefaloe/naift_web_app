@@ -215,3 +215,40 @@ class VoteEntryTests(TestCase):
         )
         response = self.client.get(reverse("voting:vote_entry"))
         self.assertRedirects(response, reverse("voting:wizard_step", args=[position.pk]))
+
+
+class WizardStepTests(TestCase):
+    def setUp(self):
+        self.student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2022/1/90976CF", level="300"
+        )
+        session = self.client.session
+        session["student_id"] = self.student.id
+        session.save()
+        user = User.objects.create_user(username="admin_voting3", password="pass12345")
+        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.position = Position.objects.create(title="President", modified_by=admin_profile)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=admin_profile,
+        )
+        self.contestant = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for progress.", position=self.position, election=self.election
+        )
+
+    def test_get_shows_contestants(self):
+        response = self.client.get(reverse("voting:wizard_step", args=[self.position.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "voting/wizard_step.html")
+        self.assertContains(response, "Jane Doe")
+
+    def test_post_stores_pick_in_session_not_database(self):
+        response = self.client.post(
+            reverse("voting:wizard_step", args=[self.position.pk]), {"contestant": self.contestant.pk}
+        )
+        self.assertRedirects(response, reverse("voting:vote_entry"), fetch_redirect_response=False)
+        self.assertEqual(self.client.session["vote_picks"], {str(self.position.pk): self.contestant.pk})
+        self.assertEqual(Vote.objects.count(), 0)

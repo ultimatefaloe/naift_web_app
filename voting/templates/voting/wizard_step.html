@@ -1,0 +1,24 @@
+{% extends "voting/base.html" %}
+
+{% block title %}{{ position.title }} · NAIFT Voting{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-3xl text-brand-purple mb-8">{{ position.title }}</h1>
+
+<form method="post" class="flex flex-col gap-4">
+    {% csrf_token %}
+    {% for contestant in contestants %}
+        <label class="flex items-center gap-4 border border-brand-purple/20 rounded-lg p-4 cursor-pointer">
+            <input type="radio" name="contestant" value="{{ contestant.pk }}" required>
+            {% if contestant.photo %}
+                <img src="{{ contestant.photo.url }}" alt="{{ contestant.name }}" class="h-16 w-16 rounded-full object-cover">
+            {% endif %}
+            <span>
+                <span class="font-display text-lg">{{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}</span>
+                <span class="block text-sm text-brand-black/70">{{ contestant.manifesto }}</span>
+            </span>
+        </label>
+    {% endfor %}
+    <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Next</button>
+</form>
+{% endblock %}

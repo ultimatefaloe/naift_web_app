@@ -1,6 +1,6 @@
 from functools import wraps
 
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from elections.models import Contestant, Election, Position
@@ -60,3 +60,22 @@ def vote_entry(request):
         if str(position.id) not in picks:
             return redirect("voting:wizard_step", position_id=position.id)
     return redirect("voting:wizard_review")
+
+
+@student_required
+def wizard_step(request, position_id):
+    election = get_ongoing_election()
+    if election is None:
+        return redirect("voting:vote_entry")
+    if Vote.objects.filter(student=request.student, election=election).exists():
+        return redirect("voting:vote_entry")
+    position = get_object_or_404(Position, pk=position_id)
+    contestants = position.contestants.filter(election=election)
+    if request.method == "POST":
+        contestant_id = request.POST.get("contestant")
+        contestant = get_object_or_404(Contestant, pk=contestant_id, position=position, election=election)
+        picks = request.session.get("vote_picks", {})
+        picks[str(position.id)] = contestant.id
+        request.session["vote_picks"] = picks
+        return redirect("voting:vote_entry")
+    return render(request, "voting/wizard_step.html", {"position": position, "contestants": contestants})

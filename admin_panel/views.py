@@ -7,6 +7,7 @@ from django.views.generic import CreateView, DeleteView, ListView, TemplateView,
 
 from elections.models import Contestant, Election, Position
 from executives.models import Executive
+from .forms import ElectionForm
 from .mixins import AdminRequiredMixin
 
 
@@ -126,3 +127,31 @@ class ExecutiveDeleteView(AdminRequiredMixin, DeleteView):
     model = Executive
     template_name = "admin_panel/executive_confirm_delete.html"
     success_url = reverse_lazy("admin_panel:executive_list")
+
+
+class ElectionListView(AdminRequiredMixin, ListView):
+    model = Election
+    template_name = "admin_panel/election_list.html"
+    context_object_name = "elections"
+
+
+class ElectionCreateView(AdminRequiredMixin, CreateView):
+    model = Election
+    form_class = ElectionForm
+    template_name = "admin_panel/election_form.html"
+    success_url = reverse_lazy("admin_panel:election_list")
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.adminprofile
+        return super().form_valid(form)
+
+
+class ElectionUpdateView(AdminRequiredMixin, UpdateView):
+    model = Election
+    form_class = ElectionForm
+    template_name = "admin_panel/election_form.html"
+    success_url = reverse_lazy("admin_panel:election_list")
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.adminprofile
+        return super().form_valid(form)

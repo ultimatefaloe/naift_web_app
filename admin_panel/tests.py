@@ -203,3 +203,51 @@ class ExecutiveCreateTests(TestCase):
         )
         self.assertRedirects(response, reverse("admin_panel:executive_list"))
         self.assertTrue(Executive.objects.filter(name="Jane Doe").exists())
+
+
+class ElectionCRUDTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin9", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_list_view_returns_200(self):
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/election_list.html")
+
+    def test_create_election_sets_modified_by(self):
+        response = self.client.post(
+            reverse("admin_panel:election_create"),
+            {
+                "session": "2026/2027",
+                "start_time": "2026-11-01T09:00",
+                "close_time": "2026-11-01T17:00",
+                "status": "upcoming",
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        election = Election.objects.get(session="2026/2027")
+        self.assertEqual(election.modified_by, self.admin_profile)
+        self.assertFalse(election.is_results_published)
+
+    def test_update_election_status(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.post(
+            reverse("admin_panel:election_update", args=[election.pk]),
+            {
+                "session": "2026/2027",
+                "start_time": "2026-11-01T09:00",
+                "close_time": "2026-11-01T17:00",
+                "status": "ongoing",
+                "is_results_published": "",
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        election.refresh_from_db()
+        self.assertEqual(election.status, "ongoing")

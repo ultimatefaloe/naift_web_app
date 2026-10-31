@@ -1,0 +1,35 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Elections · NAIFT Admin{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+    <h1 class="font-display text-3xl text-brand-purple">Elections</h1>
+    <a href="{% url 'admin_panel:election_create' %}" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Add Election</a>
+</div>
+
+<table class="w-full text-left border-collapse">
+    <thead>
+        <tr class="border-b border-brand-black/10">
+            <th class="py-2">Session</th>
+            <th class="py-2">Status</th>
+            <th class="py-2">Results Published?</th>
+            <th class="py-2"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for election in elections %}
+            <tr class="border-b border-brand-black/10">
+                <td class="py-2">{{ election.session }}</td>
+                <td class="py-2">{{ election.get_status_display }}</td>
+                <td class="py-2">{% if election.is_results_published %}Yes{% else %}No{% endif %}</td>
+                <td class="py-2 text-right">
+                    <a href="{% url 'admin_panel:election_update' election.pk %}" class="text-brand-purple hover:underline">Edit</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4" class="py-4">No elections yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,6 +1,6 @@
 from functools import wraps
 
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from elections.models import Contestant, Election, Position
@@ -33,8 +33,10 @@ def student_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         student_id = request.session.get("student_id")
-        if not student_id or not Student.objects.filter(pk=student_id).exists():
+        student = Student.objects.filter(pk=student_id).first() if student_id else None
+        if student is None:
             return redirect("voting:login")
+        request.student = student
         return view_func(request, *args, **kwargs)
     return wrapper
 
@@ -48,8 +50,7 @@ def vote_entry(request):
     election = get_ongoing_election()
     if election is None:
         return render(request, "voting/no_election.html")
-    student = Student.objects.get(pk=request.session["student_id"])
-    if Vote.objects.filter(student=student, election=election).exists():
+    if Vote.objects.filter(student=request.student, election=election).exists():
         return render(request, "voting/voted.html")
     positions = Position.objects.filter(contestants__election=election).distinct().order_by("title")
     if not positions.exists():

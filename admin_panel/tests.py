@@ -33,6 +33,13 @@ class DashboardAccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "admin_panel/dashboard.html")
 
+    def test_logout_clears_session_and_requires_post(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.post(reverse("admin_panel:logout"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
+        dashboard_response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(dashboard_response, reverse("admin_panel:login"))
+
 
 class LoginViewTests(TestCase):
     def setUp(self):

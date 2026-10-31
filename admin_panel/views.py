@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
 from elections.models import Contestant, Election, Position
@@ -20,6 +21,7 @@ def login_view(request):
     return render(request, "admin_panel/login.html")
 
 
+@require_POST
 def logout_view(request):
     auth_logout(request)
     return redirect("admin_panel:login")
@@ -33,5 +35,7 @@ class DashboardView(AdminRequiredMixin, TemplateView):
         context["position_count"] = Position.objects.count()
         context["contestant_count"] = Contestant.objects.count()
         context["executive_count"] = Executive.objects.count()
-        context["current_election"] = Election.objects.order_by("-id").first()
+        context["current_election"] = (
+            Election.objects.exclude(status=Election.STATUS_ENDED).order_by("-id").first()
+        )
         return context

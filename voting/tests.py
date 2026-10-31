@@ -412,3 +412,31 @@ class WizardReviewTests(TestCase):
         session.save()
         response = self.client.get(reverse("voting:wizard_review"))
         self.assertEqual(response.status_code, 404)
+
+
+class ResultsArchiveTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin_voting6", password="pass12345")
+        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.published = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            status="ended",
+            is_results_published=True,
+            modified_by=admin_profile,
+        )
+        self.unpublished = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ended",
+            is_results_published=False,
+            modified_by=admin_profile,
+        )
+
+    def test_archive_lists_only_published_elections(self):
+        response = self.client.get(reverse("voting:results_archive"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2025/2026")
+        self.assertNotContains(response, "2026/2027")

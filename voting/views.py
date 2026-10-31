@@ -131,3 +131,8 @@ def results_view(request, pk=None):
         .order_by("position__title", "position_id", "-vote_count")
     )
     return render(request, "voting/results.html", {"election": election, "tallies": tallies})
+
+
+def results_archive(request):
+    elections = Election.objects.filter(is_results_published=True).order_by("-id")
+    return render(request, "voting/results_archive.html", {"elections": elections})

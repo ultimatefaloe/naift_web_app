@@ -1,0 +1,17 @@
+{% extends "voting/base.html" %}
+
+{% block title %}Past Election Results · NAIFT Voting{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-3xl text-brand-purple mb-8">Past Election Results</h1>
+
+<ul class="space-y-3">
+    {% for election in elections %}
+        <li>
+            <a href="{% url 'voting:results_detail' election.pk %}" class="text-brand-purple hover:underline font-display text-lg">{{ election.session }}</a>
+        </li>
+    {% empty %}
+        <li>No published election results yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

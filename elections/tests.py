@@ -49,6 +49,24 @@ class ContestantModelTests(TestCase):
         )
         self.assertEqual(str(contestant), "Jane Doe (President)")
 
+    def test_save_without_position_raises_integrity_error(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Contestant.objects.create(
+                    name="Jane Doe",
+                    manifesto="Vote for progress.",
+                    election=self.election,
+                )
+
+    def test_save_without_election_raises_integrity_error(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Contestant.objects.create(
+                    name="Jane Doe",
+                    manifesto="Vote for progress.",
+                    position=self.position,
+                )
+
 
 class ElectionModelTests(TestCase):
     def setUp(self):

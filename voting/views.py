@@ -1,6 +1,7 @@
 from functools import wraps
 
 from django.db import transaction
+from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -114,3 +115,19 @@ def wizard_review(request):
         request.session.pop("vote_picks", None)
         return redirect("voting:vote_entry")
     return render(request, "voting/wizard_review.html", {"selections": selections})
+
+
+def results_view(request, pk=None):
+    if pk:
+        election = get_object_or_404(Election, pk=pk, is_results_published=True)
+    else:
+        election = Election.objects.filter(is_results_published=True).order_by("-id").first()
+        if election is None:
+            return render(request, "voting/results_not_published.html")
+    tallies = (
+        Contestant.objects.filter(election=election)
+        .select_related("position")
+        .annotate(vote_count=Count("votes"))
+        .order_by("position__title", "-vote_count")
+    )
+    return render(request, "voting/results.html", {"election": election, "tallies": tallies})

@@ -271,6 +271,47 @@ class WizardStepTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class ResultsViewTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin_voting5", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ended",
+            is_results_published=True,
+            modified_by=self.admin_profile,
+        )
+        self.contestant = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for progress.", position=self.position, election=self.election
+        )
+        student = Student.objects.create(
+            first_name="John", last_name="Smith", matric_number="2022/1/90976CF", level="300"
+        )
+        Vote.objects.create(
+            student=student, election=self.election, position=self.position, contestant=self.contestant
+        )
+
+    def test_results_not_published_shows_fallback_page(self):
+        self.election.is_results_published = False
+        self.election.save()
+        response = self.client.get(reverse("voting:results"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "voting/results_not_published.html")
+
+    def test_results_shows_vote_tally(self):
+        response = self.client.get(reverse("voting:results"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Jane Doe")
+        self.assertContains(response, "1 vote")
+
+    def test_results_no_login_required(self):
+        response = self.client.get(reverse("voting:results"))
+        self.assertEqual(response.status_code, 200)
+
+
 class WizardReviewTests(TestCase):
     def setUp(self):
         self.student = Student.objects.create(

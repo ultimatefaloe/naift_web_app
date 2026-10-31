@@ -10,4 +10,6 @@ urlpatterns = [
     path("", views.vote_entry, name="vote_entry"),
     path("position/<int:position_id>/", views.wizard_step, name="wizard_step"),
     path("review/", views.wizard_review, name="wizard_review"),
+    path("results/", views.results_view, name="results"),
+    path("results/<int:pk>/", views.results_view, name="results_detail"),
 ]

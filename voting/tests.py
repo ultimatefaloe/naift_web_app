@@ -485,3 +485,33 @@ class SeedStudentsCommandTests(TestCase):
     def test_missing_csv_file_raises_command_error(self):
         with self.assertRaises(CommandError):
             call_command("seed_students", "/nonexistent/path.csv")
+
+    def test_missing_column_is_skipped_and_reported(self):
+        csv_content = "first_name,last_name,matric_number\nJane,Doe,2022/1/90976CF\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write(csv_content)
+            csv_path = f.name
+        try:
+            out = StringIO()
+            err = StringIO()
+            call_command("seed_students", csv_path, stdout=out, stderr=err)
+            self.assertFalse(Student.objects.filter(matric_number="2022/1/90976CF").exists())
+            self.assertIn("skipped 1 row", out.getvalue())
+            self.assertIn("Row 2", err.getvalue())
+        finally:
+            os.unlink(csv_path)
+
+    def test_malformed_matric_number_is_skipped_and_reported(self):
+        csv_content = "first_name,last_name,matric_number,level\nJane,Doe,not-a-matric-number,300\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write(csv_content)
+            csv_path = f.name
+        try:
+            out = StringIO()
+            err = StringIO()
+            call_command("seed_students", csv_path, stdout=out, stderr=err)
+            self.assertFalse(Student.objects.filter(first_name="Jane", last_name="Doe").exists())
+            self.assertIn("skipped 1 row", out.getvalue())
+            self.assertIn("Row 2", err.getvalue())
+        finally:
+            os.unlink(csv_path)

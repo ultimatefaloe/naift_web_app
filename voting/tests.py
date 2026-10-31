@@ -252,3 +252,20 @@ class WizardStepTests(TestCase):
         self.assertRedirects(response, reverse("voting:vote_entry"), fetch_redirect_response=False)
         self.assertEqual(self.client.session["vote_picks"], {str(self.position.pk): self.contestant.pk})
         self.assertEqual(Vote.objects.count(), 0)
+
+    def test_post_rejects_contestant_from_different_position(self):
+        other_position = Position.objects.create(title="Vice President", modified_by=self.position.modified_by)
+        other_contestant = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=other_position, election=self.election
+        )
+        response = self.client.post(
+            reverse("voting:wizard_step", args=[self.position.pk]), {"contestant": other_contestant.pk}
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("vote_picks", self.client.session)
+
+    def test_post_rejects_malformed_contestant_value(self):
+        response = self.client.post(
+            reverse("voting:wizard_step", args=[self.position.pk]), {"contestant": "not-a-number"}
+        )
+        self.assertEqual(response.status_code, 404)

@@ -1,5 +1,6 @@
 from functools import wraps
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -73,6 +74,10 @@ def wizard_step(request, position_id):
     contestants = position.contestants.filter(election=election)
     if request.method == "POST":
         contestant_id = request.POST.get("contestant")
+        try:
+            contestant_id = int(contestant_id)
+        except (TypeError, ValueError):
+            raise Http404("Invalid contestant selection.")
         contestant = get_object_or_404(Contestant, pk=contestant_id, position=position, election=election)
         picks = request.session.get("vote_picks", {})
         picks[str(position.id)] = contestant.id

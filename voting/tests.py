@@ -153,3 +153,10 @@ class LogoutViewTests(TestCase):
         response = self.client.post(reverse("voting:logout"))
         self.assertEqual(response.status_code, 302)
         self.assertNotIn("student_id", self.client.session)
+
+    def test_logout_rejects_get(self):
+        session = self.client.session
+        session["student_id"] = self.student.id
+        session.save()
+        response = self.client.get(reverse("voting:logout"))
+        self.assertEqual(response.status_code, 405)

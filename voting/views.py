@@ -128,6 +128,6 @@ def results_view(request, pk=None):
         Contestant.objects.filter(election=election)
         .select_related("position")
         .annotate(vote_count=Count("votes"))
-        .order_by("position__title", "-vote_count")
+        .order_by("position__title", "position_id", "-vote_count")
     )
     return render(request, "voting/results.html", {"election": election, "tallies": tallies})

@@ -311,6 +311,32 @@ class ResultsViewTests(TestCase):
         response = self.client.get(reverse("voting:results"))
         self.assertEqual(response.status_code, 200)
 
+    def test_results_groups_tallies_correctly_with_duplicate_position_titles(self):
+        other_position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        other_contestant = Contestant.objects.create(
+            name="Alice Smith", manifesto="Vote for change.", position=other_position, election=self.election
+        )
+        other_student = Student.objects.create(
+            first_name="Bob", last_name="Jones", matric_number="2022/2/11111CF", level="200"
+        )
+        Vote.objects.create(
+            student=other_student,
+            election=self.election,
+            position=other_position,
+            contestant=other_contestant,
+        )
+        response = self.client.get(reverse("voting:results"))
+        self.assertContains(response, "Jane Doe")
+        self.assertContains(response, "Alice Smith")
+
+    def test_results_shows_zero_vote_contestant(self):
+        Contestant.objects.create(
+            name="No Votes Yet", manifesto="Vote for me.", position=self.position, election=self.election
+        )
+        response = self.client.get(reverse("voting:results"))
+        self.assertContains(response, "No Votes Yet")
+        self.assertContains(response, "0 vote")
+
 
 class WizardReviewTests(TestCase):
     def setUp(self):

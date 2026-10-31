@@ -134,5 +134,9 @@ def results_view(request, pk=None):
 
 
 def results_archive(request):
+    # Ordered by creation order (-id) rather than academic session, since Election
+    # has no created_at field and session strings aren't validated to sort
+    # chronologically — acceptable for a department-scale app with one trusted
+    # admin flow that creates Election records in session order.
     elections = Election.objects.filter(is_results_published=True).order_by("-id")
     return render(request, "voting/results_archive.html", {"elections": elections})

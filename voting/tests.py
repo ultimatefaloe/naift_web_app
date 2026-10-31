@@ -440,3 +440,24 @@ class ResultsArchiveTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "2025/2026")
         self.assertNotContains(response, "2026/2027")
+
+    def test_archive_orders_multiple_published_elections_most_recent_first(self):
+        newer = Election.objects.create(
+            session="2027/2028",
+            start_time="2027-11-01T09:00:00Z",
+            close_time="2027-11-01T17:00:00Z",
+            status="ended",
+            is_results_published=True,
+            modified_by=self.published.modified_by,
+        )
+        response = self.client.get(reverse("voting:results_archive"))
+        content = response.content.decode()
+        self.assertLess(content.index("2027/2028"), content.index("2025/2026"))
+
+    def test_archive_shows_empty_state_when_no_published_elections(self):
+        self.published.is_results_published = False
+        self.published.save()
+        self.unpublished.is_results_published = False
+        self.unpublished.save()
+        response = self.client.get(reverse("voting:results_archive"))
+        self.assertContains(response, "No published election results yet.")

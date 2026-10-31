@@ -1,0 +1,15 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Admin Login · NAIFT{% endblock %}
+
+{% block content %}
+<div class="max-w-sm mx-auto mt-16">
+    <h1 class="font-display text-3xl text-brand-purple mb-6 text-center">Admin Login</h1>
+    <form method="post" class="flex flex-col gap-4">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Username" required class="border border-brand-black/20 rounded px-4 py-2">
+        <input type="password" name="password" placeholder="Password" required class="border border-brand-black/20 rounded px-4 py-2">
+        <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Log in</button>
+    </form>
+</div>
+{% endblock %}

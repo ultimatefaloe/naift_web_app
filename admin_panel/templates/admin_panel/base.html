@@ -1,0 +1,40 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin · NAIFT{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% tailwind_css %}
+</head>
+<body class="bg-brand-white text-brand-black font-body">
+    {% if user.is_authenticated %}
+    <header class="flex items-center justify-between px-6 py-4 bg-brand-black text-brand-white">
+        <span class="font-display text-xl">NAIFT Admin</span>
+        <nav class="flex items-center gap-6 font-body">
+            <a href="{% url 'admin_panel:dashboard' %}" class="hover:text-brand-purple">Dashboard</a>
+            <a href="{% url 'admin_panel:position_list' %}" class="hover:text-brand-purple">Positions</a>
+            <a href="{% url 'admin_panel:contestant_list' %}" class="hover:text-brand-purple">Contestants</a>
+            <a href="{% url 'admin_panel:executive_list' %}" class="hover:text-brand-purple">Executives</a>
+            <a href="{% url 'admin_panel:election_list' %}" class="hover:text-brand-purple">Elections</a>
+            <form method="post" action="{% url 'admin_panel:logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="hover:text-brand-purple">Logout</button>
+            </form>
+        </nav>
+    </header>
+    {% endif %}
+
+    <main class="px-6 py-10 max-w-5xl mx-auto">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 px-4 py-3 rounded bg-brand-purple/10 text-brand-purple">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

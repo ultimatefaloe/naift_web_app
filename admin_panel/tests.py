@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 
 from .models import AdminProfile
 
@@ -9,3 +10,46 @@ class AdminProfileModelTests(TestCase):
         user = User.objects.create_user(username="admin1", password="pass12345")
         profile = AdminProfile.objects.create(user=user, is_admin=True)
         self.assertEqual(str(profile), "admin1")
+
+
+class DashboardAccessTests(TestCase):
+    def setUp(self):
+        self.non_admin = User.objects.create_user(username="student1", password="pass12345")
+        self.admin_user = User.objects.create_user(username="admin4", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+
+    def test_unauthenticated_user_redirected_to_login(self):
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
+
+    def test_authenticated_non_admin_redirected_to_login(self):
+        self.client.force_login(self.non_admin)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
+
+    def test_admin_can_access_dashboard(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/dashboard.html")
+
+
+class LoginViewTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin5", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+
+    def test_valid_credentials_log_the_user_in(self):
+        response = self.client.post(
+            reverse("admin_panel:login"),
+            {"username": "admin5", "password": "pass12345"},
+        )
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_invalid_credentials_show_error(self):
+        response = self.client.post(
+            reverse("admin_panel:login"),
+            {"username": "admin5", "password": "wrongpassword"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invalid username or password.")

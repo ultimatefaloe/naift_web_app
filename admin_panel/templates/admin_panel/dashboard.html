@@ -1,0 +1,26 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Dashboard · NAIFT Admin{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-3xl text-brand-purple mb-8">Dashboard</h1>
+
+<div class="grid sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
+        <p class="text-3xl font-display text-brand-purple">{{ position_count }}</p>
+        <p>Positions</p>
+    </div>
+    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
+        <p class="text-3xl font-display text-brand-purple">{{ contestant_count }}</p>
+        <p>Contestants</p>
+    </div>
+    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
+        <p class="text-3xl font-display text-brand-purple">{{ executive_count }}</p>
+        <p>Executives</p>
+    </div>
+    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
+        <p class="text-3xl font-display text-brand-purple">{% if current_election %}{{ current_election.get_status_display }}{% else %}None{% endif %}</p>
+        <p>Current Election</p>
+    </div>
+</div>
+{% endblock %}

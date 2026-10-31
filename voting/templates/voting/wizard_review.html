@@ -1,0 +1,21 @@
+{% extends "voting/base.html" %}
+
+{% block title %}Review Your Vote · NAIFT Voting{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-3xl text-brand-purple mb-8">Review Your Vote</h1>
+
+<ul class="mb-8 space-y-3">
+    {% for contestant in selections %}
+        <li class="border border-brand-purple/20 rounded-lg p-4">
+            <span class="font-display">{{ contestant.position.title }}:</span>
+            {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
+        </li>
+    {% endfor %}
+</ul>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Submit My Vote</button>
+</form>
+{% endblock %}

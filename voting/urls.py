@@ -1,5 +1,4 @@
 from django.urls import path
-from django.views.generic import TemplateView
 
 from . import views
 
@@ -10,9 +9,5 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("", views.vote_entry, name="vote_entry"),
     path("position/<int:position_id>/", views.wizard_step, name="wizard_step"),
-    path(
-        "review/",
-        TemplateView.as_view(template_name="voting/login.html"),
-        name="wizard_review",
-    ),
+    path("review/", views.wizard_review, name="wizard_review"),
 ]

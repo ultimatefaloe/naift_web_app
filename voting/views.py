@@ -1,5 +1,6 @@
 from functools import wraps
 
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -84,3 +85,26 @@ def wizard_step(request, position_id):
         request.session["vote_picks"] = picks
         return redirect("voting:vote_entry")
     return render(request, "voting/wizard_step.html", {"position": position, "contestants": contestants})
+
+
+@student_required
+def wizard_review(request):
+    election = get_ongoing_election()
+    if election is None:
+        return redirect("voting:vote_entry")
+    if Vote.objects.filter(student=request.student, election=election).exists():
+        return redirect("voting:vote_entry")
+    picks = request.session.get("vote_picks", {})
+    selections = [get_object_or_404(Contestant, pk=contestant_id) for contestant_id in picks.values()]
+    if request.method == "POST":
+        with transaction.atomic():
+            for contestant in selections:
+                Vote.objects.create(
+                    student=request.student,
+                    election=election,
+                    position=contestant.position,
+                    contestant=contestant,
+                )
+        request.session.pop("vote_picks", None)
+        return redirect("voting:vote_entry")
+    return render(request, "voting/wizard_review.html", {"selections": selections})

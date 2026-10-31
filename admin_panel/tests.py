@@ -1,10 +1,16 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from elections.models import Position
+from elections.models import Contestant, Election, Position
 
 from .models import AdminProfile
+
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
 class AdminProfileModelTests(TestCase):
@@ -95,3 +101,57 @@ class PositionCRUDTests(TestCase):
         response = self.client.post(reverse("admin_panel:position_delete", args=[position.pk]))
         self.assertRedirects(response, reverse("admin_panel:position_list"))
         self.assertFalse(Position.objects.filter(pk=position.pk).exists())
+
+
+@override_settings(STORAGES=TEST_STORAGES)
+class ContestantCRUDTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin7", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+        self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+
+    def test_list_view_returns_200(self):
+        response = self.client.get(reverse("admin_panel:contestant_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/contestant_list.html")
+
+    def test_create_contestant(self):
+        # A minimal valid 1x1 GIF — ImageField validates uploads are real images via
+        # Pillow, so arbitrary bytes (e.g. b"fake-image-bytes") fail validation.
+        gif_1px = (
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04"
+            b"\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+        )
+        photo = SimpleUploadedFile("candidate.gif", gif_1px, content_type="image/gif")
+        response = self.client.post(
+            reverse("admin_panel:contestant_create"),
+            {
+                "name": "Jane Doe",
+                "alias": "JD",
+                "manifesto": "Vote for progress.",
+                "position": self.position.pk,
+                "election": self.election.pk,
+                "photo": photo,
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:contestant_list"))
+        self.assertTrue(Contestant.objects.filter(name="Jane Doe").exists())
+
+    def test_delete_contestant(self):
+        contestant = Contestant.objects.create(
+            name="John Smith",
+            alias="JS",
+            manifesto="Vote for stability.",
+            position=self.position,
+            election=self.election,
+        )
+        response = self.client.post(reverse("admin_panel:contestant_delete", args=[contestant.pk]))
+        self.assertRedirects(response, reverse("admin_panel:contestant_list"))
+        self.assertFalse(Contestant.objects.filter(pk=contestant.pk).exists())

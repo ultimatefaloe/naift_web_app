@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from django.urls import reverse
 
 from admin_panel.models import AdminProfile
 from elections.models import Contestant, Election, Position
@@ -114,3 +115,41 @@ class VoteModelTests(TestCase):
             student=other_student, election=self.election, position=self.position, contestant=self.contestant
         )
         self.assertEqual(Vote.objects.filter(position=self.position, election=self.election).count(), 2)
+
+
+class LoginViewTests(TestCase):
+    def setUp(self):
+        self.student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2022/1/90976CF", level="300"
+        )
+
+    def test_valid_credentials_log_student_in(self):
+        response = self.client.post(
+            reverse("voting:login"),
+            {"first_name": "Jane", "matric_number": "2022/1/90976CF"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session["student_id"], self.student.id)
+
+    def test_invalid_credentials_show_error(self):
+        response = self.client.post(
+            reverse("voting:login"),
+            {"first_name": "Jane", "matric_number": "0000/0/00000CF"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No matching student record found.")
+
+
+class LogoutViewTests(TestCase):
+    def setUp(self):
+        self.student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2022/1/90976CF", level="300"
+        )
+
+    def test_logout_clears_session(self):
+        session = self.client.session
+        session["student_id"] = self.student.id
+        session.save()
+        response = self.client.post(reverse("voting:logout"))
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn("student_id", self.client.session)

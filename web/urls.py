@@ -22,4 +22,5 @@ urlpatterns = [
     path('', include('core.urls')),
     path('executives/', include('executives.urls')),
     path('dashboard/', include('admin_panel.urls')),
+    path('vote/', include('voting.urls')),
 ]

@@ -1,0 +1,32 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vote · NAIFT{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% tailwind_css %}
+</head>
+<body class="bg-brand-white text-brand-black font-body">
+    <header class="flex items-center justify-between px-6 py-4 border-b border-brand-black/10">
+        <div class="flex items-center gap-3">
+            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-12 w-12 rounded-full object-cover">
+            <img src="{% static 'image/naifts_logo.jpeg' %}" alt="NAIFT logo" class="h-12 w-12 rounded-full object-cover">
+            <span class="font-display text-xl text-brand-purple">NAIFT Voting</span>
+        </div>
+        {% if request.session.student_id %}
+        <form method="post" action="{% url 'voting:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="hover:text-brand-purple">Logout</button>
+        </form>
+        {% endif %}
+    </header>
+
+    <main class="px-6 py-10 max-w-3xl mx-auto">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

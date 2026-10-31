@@ -1,0 +1,18 @@
+{% extends "voting/base.html" %}
+
+{% block title %}Student Login · NAIFT Voting{% endblock %}
+
+{% block content %}
+<div class="max-w-sm mx-auto mt-16">
+    <h1 class="font-display text-3xl text-brand-purple mb-6 text-center">Student Login</h1>
+    {% if error %}
+        <p class="mb-4 px-4 py-3 rounded bg-brand-purple/10 text-brand-purple">{{ error }}</p>
+    {% endif %}
+    <form method="post" class="flex flex-col gap-4">
+        {% csrf_token %}
+        <input type="text" name="first_name" placeholder="First Name" required class="border border-brand-black/20 rounded px-4 py-2">
+        <input type="text" name="matric_number" placeholder="Matric Number (e.g. 2022/1/90976CF)" required class="border border-brand-black/20 rounded px-4 py-2">
+        <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Log in</button>
+    </form>
+</div>
+{% endblock %}

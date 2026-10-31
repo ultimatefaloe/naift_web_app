@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'executives',
     'admin_panel',
     'elections',
+    'voting',
 ]
 
 MIDDLEWARE = [

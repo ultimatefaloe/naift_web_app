@@ -16,6 +16,9 @@ urlpatterns = [
     path("contestants/add/", views.ContestantCreateView.as_view(), name="contestant_create"),
     path("contestants/<int:pk>/edit/", views.ContestantUpdateView.as_view(), name="contestant_update"),
     path("contestants/<int:pk>/delete/", views.ContestantDeleteView.as_view(), name="contestant_delete"),
-    path("executives/", views.DashboardView.as_view(), name="executive_list"),
+    path("executives/", views.ExecutiveListView.as_view(), name="executive_list"),
+    path("executives/add/", views.ExecutiveCreateView.as_view(), name="executive_create"),
+    path("executives/<int:pk>/edit/", views.ExecutiveUpdateView.as_view(), name="executive_update"),
+    path("executives/<int:pk>/delete/", views.ExecutiveDeleteView.as_view(), name="executive_delete"),
     path("elections/", views.DashboardView.as_view(), name="election_list"),
 ]

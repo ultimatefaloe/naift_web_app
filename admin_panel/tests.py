@@ -4,6 +4,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from elections.models import Contestant, Election, Position
+from executives.models import Executive
 
 from .models import AdminProfile
 
@@ -155,3 +156,23 @@ class ContestantCRUDTests(TestCase):
         response = self.client.post(reverse("admin_panel:contestant_delete", args=[contestant.pk]))
         self.assertRedirects(response, reverse("admin_panel:contestant_list"))
         self.assertFalse(Contestant.objects.filter(pk=contestant.pk).exists())
+
+
+class ExecutiveCRUDTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin8", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_list_view_returns_200(self):
+        response = self.client.get(reverse("admin_panel:executive_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/executive_list.html")
+
+    def test_delete_executive(self):
+        executive = Executive.objects.create(
+            name="Jane Doe", position="President", session="2026/2027", is_current=True
+        )
+        response = self.client.post(reverse("admin_panel:executive_delete", args=[executive.pk]))
+        self.assertRedirects(response, reverse("admin_panel:executive_list"))
+        self.assertFalse(Executive.objects.filter(pk=executive.pk).exists())

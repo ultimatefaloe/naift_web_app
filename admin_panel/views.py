@@ -100,3 +100,29 @@ class ContestantDeleteView(AdminRequiredMixin, DeleteView):
     model = Contestant
     template_name = "admin_panel/contestant_confirm_delete.html"
     success_url = reverse_lazy("admin_panel:contestant_list")
+
+
+class ExecutiveListView(AdminRequiredMixin, ListView):
+    model = Executive
+    template_name = "admin_panel/executive_list.html"
+    context_object_name = "executives"
+
+
+class ExecutiveCreateView(AdminRequiredMixin, CreateView):
+    model = Executive
+    fields = ["name", "position", "photo", "session", "is_current"]
+    template_name = "admin_panel/executive_form.html"
+    success_url = reverse_lazy("admin_panel:executive_list")
+
+
+class ExecutiveUpdateView(AdminRequiredMixin, UpdateView):
+    model = Executive
+    fields = ["name", "position", "photo", "session", "is_current"]
+    template_name = "admin_panel/executive_form.html"
+    success_url = reverse_lazy("admin_panel:executive_list")
+
+
+class ExecutiveDeleteView(AdminRequiredMixin, DeleteView):
+    model = Executive
+    template_name = "admin_panel/executive_confirm_delete.html"
+    success_url = reverse_lazy("admin_panel:executive_list")

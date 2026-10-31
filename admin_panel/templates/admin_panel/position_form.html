@@ -1,0 +1,13 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Position · NAIFT Admin{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-3xl text-brand-purple mb-8">{% if object %}Edit{% else %}Add{% endif %} Position</h1>
+
+<form method="post" class="flex flex-col gap-4 max-w-md">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Save</button>
+</form>
+{% endblock %}

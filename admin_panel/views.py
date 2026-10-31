@@ -1,8 +1,9 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
+from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
 from elections.models import Contestant, Election, Position
 from executives.models import Executive
@@ -39,3 +40,37 @@ class DashboardView(AdminRequiredMixin, TemplateView):
             Election.objects.exclude(status=Election.STATUS_ENDED).order_by("-id").first()
         )
         return context
+
+
+class PositionListView(AdminRequiredMixin, ListView):
+    model = Position
+    template_name = "admin_panel/position_list.html"
+    context_object_name = "positions"
+
+
+class PositionCreateView(AdminRequiredMixin, CreateView):
+    model = Position
+    fields = ["title"]
+    template_name = "admin_panel/position_form.html"
+    success_url = reverse_lazy("admin_panel:position_list")
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.adminprofile
+        return super().form_valid(form)
+
+
+class PositionUpdateView(AdminRequiredMixin, UpdateView):
+    model = Position
+    fields = ["title"]
+    template_name = "admin_panel/position_form.html"
+    success_url = reverse_lazy("admin_panel:position_list")
+
+    def form_valid(self, form):
+        form.instance.modified_by = self.request.user.adminprofile
+        return super().form_valid(form)
+
+
+class PositionDeleteView(AdminRequiredMixin, DeleteView):
+    model = Position
+    template_name = "admin_panel/position_confirm_delete.html"
+    success_url = reverse_lazy("admin_panel:position_list")

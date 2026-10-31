@@ -73,3 +73,44 @@ class VoteModelTests(TestCase):
                     position=self.position,
                     contestant=self.contestant,
                 )
+
+    def test_duplicate_vote_with_different_contestant_still_raises_integrity_error(self):
+        other_contestant = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=self.position, election=self.election
+        )
+        Vote.objects.create(
+            student=self.student, election=self.election, position=self.position, contestant=self.contestant
+        )
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Vote.objects.create(
+                    student=self.student,
+                    election=self.election,
+                    position=self.position,
+                    contestant=other_contestant,
+                )
+
+    def test_same_student_can_vote_for_a_different_position_in_same_election(self):
+        other_position = Position.objects.create(title="Vice President", modified_by=self.contestant.position.modified_by)
+        other_contestant = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=other_position, election=self.election
+        )
+        Vote.objects.create(
+            student=self.student, election=self.election, position=self.position, contestant=self.contestant
+        )
+        Vote.objects.create(
+            student=self.student, election=self.election, position=other_position, contestant=other_contestant
+        )
+        self.assertEqual(Vote.objects.filter(student=self.student).count(), 2)
+
+    def test_different_student_can_vote_for_same_election_and_position(self):
+        other_student = Student.objects.create(
+            first_name="Alice", last_name="Jones", matric_number="2022/2/55555CF", level="200"
+        )
+        Vote.objects.create(
+            student=self.student, election=self.election, position=self.position, contestant=self.contestant
+        )
+        Vote.objects.create(
+            student=other_student, election=self.election, position=self.position, contestant=self.contestant
+        )
+        self.assertEqual(Vote.objects.filter(position=self.position, election=self.election).count(), 2)

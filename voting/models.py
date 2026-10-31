@@ -26,10 +26,10 @@ class Student(models.Model):
 
 
 class Vote(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="votes")
-    election = models.ForeignKey("elections.Election", on_delete=models.CASCADE, related_name="votes")
-    position = models.ForeignKey("elections.Position", on_delete=models.CASCADE, related_name="votes")
-    contestant = models.ForeignKey("elections.Contestant", on_delete=models.CASCADE, related_name="votes")
+    student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name="votes")
+    election = models.ForeignKey("elections.Election", on_delete=models.PROTECT, related_name="votes")
+    position = models.ForeignKey("elections.Position", on_delete=models.PROTECT, related_name="votes")
+    contestant = models.ForeignKey("elections.Contestant", on_delete=models.PROTECT, related_name="votes")
     voted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -7,7 +7,7 @@
 {% if latest_election %}
     <div class="bg-brand-black text-brand-white px-6 py-3 text-center" data-aos="fade-down">
         {% if latest_election.status == "ongoing" %}
-            <p>Voting Ongoing for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}. <a href="#" class="underline hover:text-brand-purple">Vote now</a></p>
+            <p>Voting Ongoing for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}. <a href="{% url 'voting:login' %}" class="underline hover:text-brand-purple">Vote now</a></p>
         {% else %}
             <p>Election starts {{ latest_election.start_time }} for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}.</p>
         {% endif %}

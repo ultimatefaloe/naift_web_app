@@ -67,3 +67,9 @@ class HomeMarqueeTests(TestCase):
         response = self.client.get(reverse("core:home"))
         self.assertNotContains(response, "Voting Ongoing")
         self.assertNotContains(response, "Election starts")
+
+
+class NavVoteLinkTests(TestCase):
+    def test_home_vote_link_points_to_voting_login(self):
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, reverse("voting:login"))

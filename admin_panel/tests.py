@@ -176,3 +176,30 @@ class ExecutiveCRUDTests(TestCase):
         response = self.client.post(reverse("admin_panel:executive_delete", args=[executive.pk]))
         self.assertRedirects(response, reverse("admin_panel:executive_list"))
         self.assertFalse(Executive.objects.filter(pk=executive.pk).exists())
+
+
+@override_settings(STORAGES=TEST_STORAGES)
+class ExecutiveCreateTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin8b", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_create_executive(self):
+        gif_1px = (
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04"
+            b"\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+        )
+        photo = SimpleUploadedFile("exec.gif", gif_1px, content_type="image/gif")
+        response = self.client.post(
+            reverse("admin_panel:executive_create"),
+            {
+                "name": "Jane Doe",
+                "position": "President",
+                "session": "2026/2027",
+                "is_current": "on",
+                "photo": photo,
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:executive_list"))
+        self.assertTrue(Executive.objects.filter(name="Jane Doe").exists())

@@ -1,7 +1,11 @@
-from django.shortcuts import redirect, render
+from functools import wraps
+
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from .models import Student
+from elections.models import Contestant, Election, Position
+
+from .models import Student, Vote
 
 
 def login_view(request):
@@ -23,3 +27,35 @@ def login_view(request):
 def logout_view(request):
     request.session.pop("student_id", None)
     return redirect("voting:login")
+
+
+def student_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        student_id = request.session.get("student_id")
+        if not student_id or not Student.objects.filter(pk=student_id).exists():
+            return redirect("voting:login")
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def get_ongoing_election():
+    return Election.objects.filter(status=Election.STATUS_ONGOING).order_by("-id").first()
+
+
+@student_required
+def vote_entry(request):
+    election = get_ongoing_election()
+    if election is None:
+        return render(request, "voting/no_election.html")
+    student = Student.objects.get(pk=request.session["student_id"])
+    if Vote.objects.filter(student=student, election=election).exists():
+        return render(request, "voting/voted.html")
+    positions = Position.objects.filter(contestants__election=election).distinct().order_by("title")
+    if not positions.exists():
+        return render(request, "voting/no_election.html")
+    picks = request.session.get("vote_picks", {})
+    for position in positions:
+        if str(position.id) not in picks:
+            return redirect("voting:wizard_step", position_id=position.id)
+    return redirect("voting:wizard_review")

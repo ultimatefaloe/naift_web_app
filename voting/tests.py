@@ -160,3 +160,58 @@ class LogoutViewTests(TestCase):
         session.save()
         response = self.client.get(reverse("voting:logout"))
         self.assertEqual(response.status_code, 405)
+
+
+class VoteEntryAccessTests(TestCase):
+    def test_unauthenticated_redirected_to_login(self):
+        response = self.client.get(reverse("voting:vote_entry"))
+        self.assertRedirects(response, reverse("voting:login"))
+
+
+class VoteEntryTests(TestCase):
+    def setUp(self):
+        self.student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2022/1/90976CF", level="300"
+        )
+        session = self.client.session
+        session["student_id"] = self.student.id
+        session.save()
+        user = User.objects.create_user(username="admin_voting2", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+
+    def test_no_ongoing_election_shows_no_election_page(self):
+        response = self.client.get(reverse("voting:vote_entry"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "voting/no_election.html")
+
+    def test_already_voted_shows_voted_page(self):
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        contestant = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for progress.", position=position, election=election
+        )
+        Vote.objects.create(student=self.student, election=election, position=position, contestant=contestant)
+        response = self.client.get(reverse("voting:vote_entry"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "voting/voted.html")
+
+    def test_eligible_student_redirected_to_first_wizard_step(self):
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for progress.", position=position, election=election
+        )
+        response = self.client.get(reverse("voting:vote_entry"))
+        self.assertRedirects(response, reverse("voting:wizard_step", args=[position.pk]))

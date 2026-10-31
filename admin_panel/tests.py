@@ -251,3 +251,14 @@ class ElectionCRUDTests(TestCase):
         self.assertRedirects(response, reverse("admin_panel:election_list"))
         election.refresh_from_db()
         self.assertEqual(election.status, "ongoing")
+
+    def test_update_form_prepopulates_existing_datetimes(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("admin_panel:election_update", args=[election.pk]))
+        self.assertContains(response, "2026-11-01T09:00")
+        self.assertContains(response, "2026-11-01T17:00")

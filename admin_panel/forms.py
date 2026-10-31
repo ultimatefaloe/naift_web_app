@@ -8,6 +8,6 @@ class ElectionForm(forms.ModelForm):
         model = Election
         fields = ["session", "start_time", "close_time", "status", "is_results_published"]
         widgets = {
-            "start_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "close_time": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "start_time": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "close_time": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
         }

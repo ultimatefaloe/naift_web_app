@@ -262,3 +262,30 @@ class ElectionCRUDTests(TestCase):
         response = self.client.get(reverse("admin_panel:election_update", args=[election.pk]))
         self.assertContains(response, "2026-11-01T09:00")
         self.assertContains(response, "2026-11-01T17:00")
+
+
+class ElectionResultsViewTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin10", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+        self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        Contestant.objects.create(
+            name="Jane Doe",
+            manifesto="Vote for progress.",
+            position=self.position,
+            election=self.election,
+        )
+
+    def test_results_view_shows_contestants_by_position(self):
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/election_results.html")
+        self.assertContains(response, "Jane Doe")
+        self.assertContains(response, "President")

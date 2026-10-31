@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from elections.models import Contestant, Election, Position
 from executives.models import Executive
@@ -155,3 +155,19 @@ class ElectionUpdateView(AdminRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.instance.modified_by = self.request.user.adminprofile
         return super().form_valid(form)
+
+
+class ElectionResultsView(AdminRequiredMixin, DetailView):
+    model = Election
+    template_name = "admin_panel/election_results.html"
+    context_object_name = "election"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Order explicitly by position so {% regroup %} (which assumes the
+        # list is already sorted by the grouping key) groups correctly —
+        # Contestant/Position have no default ordering of their own.
+        context["contestants"] = self.object.contestants.select_related("position").order_by(
+            "position__title", "name"
+        )
+        return context

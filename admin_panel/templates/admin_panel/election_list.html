@@ -25,6 +25,8 @@
                 <td class="py-2">{% if election.is_results_published %}Yes{% else %}No{% endif %}</td>
                 <td class="py-2 text-right">
                     <a href="{% url 'admin_panel:election_update' election.pk %}" class="text-brand-purple hover:underline">Edit</a>
+                    &middot;
+                    <a href="{% url 'admin_panel:election_results' election.pk %}" class="text-brand-purple hover:underline">Results</a>
                 </td>
             </tr>
         {% empty %}

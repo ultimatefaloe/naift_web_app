@@ -23,4 +23,5 @@ urlpatterns = [
     path("elections/", views.ElectionListView.as_view(), name="election_list"),
     path("elections/add/", views.ElectionCreateView.as_view(), name="election_create"),
     path("elections/<int:pk>/edit/", views.ElectionUpdateView.as_view(), name="election_update"),
+    path("elections/<int:pk>/results/", views.ElectionResultsView.as_view(), name="election_results"),
 ]

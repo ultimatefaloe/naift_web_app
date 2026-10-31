@@ -23,3 +23,17 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.matric_number})"
+
+
+class Vote(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="votes")
+    election = models.ForeignKey("elections.Election", on_delete=models.CASCADE, related_name="votes")
+    position = models.ForeignKey("elections.Position", on_delete=models.CASCADE, related_name="votes")
+    contestant = models.ForeignKey("elections.Contestant", on_delete=models.CASCADE, related_name="votes")
+    voted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("student", "election", "position")
+
+    def __str__(self):
+        return f"{self.student} -> {self.contestant} ({self.position})"

@@ -60,3 +60,13 @@ class ElectionModelTests(TestCase):
                     start_time="2026-11-01T09:00:00Z",
                     close_time="2026-11-01T17:00:00Z",
                 )
+
+    def test_deleting_admin_profile_with_election_is_protected(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        with self.assertRaises(ProtectedError):
+            self.admin_profile.delete()

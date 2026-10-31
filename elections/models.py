@@ -32,3 +32,15 @@ class Election(models.Model):
 
     def __str__(self):
         return self.session
+
+
+class Contestant(models.Model):
+    name = models.CharField(max_length=150)
+    alias = models.CharField(max_length=100, blank=True, help_text="Popularly known as")
+    photo = models.ImageField(upload_to="contestants/")
+    manifesto = models.TextField()
+    position = models.ForeignKey(Position, on_delete=models.CASCADE, related_name="contestants")
+    election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name="contestants")
+
+    def __str__(self):
+        return f"{self.name} ({self.position.title})"

@@ -4,7 +4,7 @@ from django.db.models import ProtectedError
 from django.test import TestCase
 
 from admin_panel.models import AdminProfile
-from .models import Position, Election
+from .models import Position, Election, Contestant
 
 
 class PositionModelTests(TestCase):
@@ -25,6 +25,29 @@ class PositionModelTests(TestCase):
         Position.objects.create(title="President", modified_by=self.admin_profile)
         with self.assertRaises(ProtectedError):
             self.admin_profile.delete()
+
+
+class ContestantModelTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin3", password="pass12345")
+        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.position = Position.objects.create(title="President", modified_by=admin_profile)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=admin_profile,
+        )
+
+    def test_string_representation(self):
+        contestant = Contestant.objects.create(
+            name="Jane Doe",
+            alias="JD",
+            manifesto="Vote for progress.",
+            position=self.position,
+            election=self.election,
+        )
+        self.assertEqual(str(contestant), "Jane Doe (President)")
 
 
 class ElectionModelTests(TestCase):

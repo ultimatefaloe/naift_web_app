@@ -1,5 +1,10 @@
+import os
+import tempfile
+from io import StringIO
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.management import CommandError, call_command
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
@@ -461,3 +466,22 @@ class ResultsArchiveTests(TestCase):
         self.unpublished.save()
         response = self.client.get(reverse("voting:results_archive"))
         self.assertContains(response, "No published election results yet.")
+
+
+class SeedStudentsCommandTests(TestCase):
+    def test_imports_students_from_csv(self):
+        csv_content = "first_name,last_name,matric_number,level\nJane,Doe,2022/1/90976CF,300\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write(csv_content)
+            csv_path = f.name
+        try:
+            out = StringIO()
+            call_command("seed_students", csv_path, stdout=out)
+            self.assertTrue(Student.objects.filter(matric_number="2022/1/90976CF").exists())
+            self.assertIn("Imported 1 new student", out.getvalue())
+        finally:
+            os.unlink(csv_path)
+
+    def test_missing_csv_file_raises_command_error(self):
+        with self.assertRaises(CommandError):
+            call_command("seed_students", "/nonexistent/path.csv")

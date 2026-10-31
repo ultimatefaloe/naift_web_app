@@ -3,7 +3,7 @@ from django.db import models
 
 matric_number_validator = RegexValidator(
     regex=r"^\d{4}/\d+/\d+CF$",
-    message="Matric number must be in the format YYYY/N/NNNNNCF (e.g. 2022/1/90976CF).",
+    message="Matric number must be in the format YYYY/<digits>/<digits>CF (e.g. 2022/1/90976CF).",
 )
 
 

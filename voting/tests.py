@@ -23,3 +23,9 @@ class StudentModelTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             student.full_clean()
+
+    def test_matric_number_accepts_varying_digit_group_widths(self):
+        student = Student(
+            first_name="Jane", last_name="Doe", matric_number="2022/12/9CF", level="300"
+        )
+        student.full_clean()

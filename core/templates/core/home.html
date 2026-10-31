@@ -4,6 +4,16 @@
 {% block title %}Home · NAIFT{% endblock %}
 
 {% block content %}
+{% if latest_election %}
+    <div class="bg-brand-black text-brand-white px-6 py-3 text-center" data-aos="fade-down">
+        {% if latest_election.status == "ongoing" %}
+            <p>Voting Ongoing for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}. <a href="#" class="underline hover:text-brand-purple">Vote now</a></p>
+        {% else %}
+            <p>Election starts {{ latest_election.start_time }} for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}.</p>
+        {% endif %}
+    </div>
+{% endif %}
+
 <section class="relative overflow-hidden text-brand-white text-center" data-aos="zoom-in">
     <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{% static 'image/hero-campus.jpg' %}');"></div>
     <div class="absolute inset-0 bg-gradient-to-b from-brand-purple/70 via-brand-purple/60 to-brand-black/75"></div>

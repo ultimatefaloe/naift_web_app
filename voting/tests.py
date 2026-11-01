@@ -532,4 +532,4 @@ class VotingNavTests(TestCase):
 
     def test_nav_includes_public_site_link(self):
         response = self.client.get(reverse("voting:login"))
-        self.assertContains(response, reverse("core:home"))
+        self.assertContains(response, f'href="{reverse("core:home")}"')

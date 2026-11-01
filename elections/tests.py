@@ -220,3 +220,29 @@ class MarkWinnersTests(TestCase):
         self.assertTrue(by_id[contestant_a.pk].is_winner)
         self.assertFalse(by_id[contestant_a2.pk].is_winner)
         self.assertTrue(by_id[contestant_b.pk].is_winner)
+
+    def test_defensive_sort_preserves_original_title_based_group_order(self):
+        # Create "Treasurer" first (lowest pk) even though it sorts after
+        # "President" and "Secretary" alphabetically — this is exactly the
+        # scenario where sorting by raw position_id (instead of first-
+        # occurrence index) would silently reorder groups away from title order.
+        position_treasurer = Position.objects.create(title="Treasurer", modified_by=self.admin_profile)
+        position_president = self.position  # "President", from setUp
+        position_secretary = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        contestant_president = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position_president, election=self.election
+        )
+        contestant_secretary = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me.", position=position_secretary, election=self.election
+        )
+        contestant_treasurer = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for me.", position=position_treasurer, election=self.election
+        )
+        # _tallies() orders by position__title first, so the input here is
+        # already correctly title-ordered: President, Secretary, Treasurer —
+        # even though position_treasurer.pk < position_president.pk.
+        tallies = mark_winners(self._tallies())
+        self.assertEqual(
+            [t.position_id for t in tallies],
+            [position_president.id, position_secretary.id, position_treasurer.id],
+        )

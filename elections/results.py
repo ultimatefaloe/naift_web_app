@@ -6,10 +6,17 @@ def mark_winners(tallies):
     contestant (no second place to compare against) always wins, and an exact
     tie for first marks no one, rather than guessing a false winner.
 
-    Defensively re-sorts by position_id (a stable sort, so it only guards
-    against non-contiguous position groups — it does not reorder or affect
-    the required -vote_count ordering within an already-correct group)."""
-    tallies = sorted(tallies, key=lambda c: c.position_id)
+    Defensively regroups non-contiguous position_id runs by sorting on each
+    group's first-occurrence index rather than raw position_id — this is a
+    no-op for already-correctly-ordered input (first-occurrence order IS the
+    original position__title order) but still fixes fragmentation for
+    genuinely scattered input, without disturbing title ordering the way a
+    plain sort-by-position_id would."""
+    tallies = list(tallies)
+    first_seen = {}
+    for index, contestant in enumerate(tallies):
+        first_seen.setdefault(contestant.position_id, index)
+    tallies = sorted(tallies, key=lambda c: first_seen[c.position_id])
     for contestant in tallies:
         contestant.is_winner = False
     i = 0

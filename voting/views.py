@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from elections.models import Contestant, Election, Position
+from elections.results import mark_winners
 
 from .models import Student, Vote
 
@@ -157,7 +158,7 @@ def results_view(request, pk=None):
             return render(request, "voting/results_not_published.html")
     # Kept in sync with admin_panel.views.ElectionResultsView's tally query —
     # update both if the ordering/annotation logic ever changes.
-    tallies = (
+    tallies = mark_winners(
         Contestant.objects.filter(election=election)
         .select_related("position")
         .annotate(vote_count=Count("votes"))

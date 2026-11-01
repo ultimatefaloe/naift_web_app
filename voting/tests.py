@@ -416,6 +416,35 @@ class ResultsViewTests(TestCase):
         self.assertContains(response, "Jane Doe")
         self.assertContains(response, "1 vote")
 
+    def test_results_shows_winner_badge_for_unopposed_contestant(self):
+        response = self.client.get(reverse("voting:results"))
+        self.assertContains(response, "Winner")
+
+    def test_results_shows_no_winner_badge_for_tied_position(self):
+        other_position = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        contestant_a = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=other_position, election=self.election
+        )
+        contestant_b = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for change.", position=other_position, election=self.election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        student2 = Student.objects.create(
+            first_name="B", last_name="Two", matric_number="2026/1/00002CF", level="300"
+        )
+        Vote.objects.create(
+            student=student1, election=self.election, position=other_position, contestant=contestant_a
+        )
+        Vote.objects.create(
+            student=student2, election=self.election, position=other_position, contestant=contestant_b
+        )
+        response = self.client.get(reverse("voting:results"))
+        # setUp's "Jane Doe" (unopposed in "President") still wins — exactly
+        # one "Winner" badge, even though this tied "Secretary" position has none.
+        self.assertContains(response, "Winner", count=1)
+
     def test_results_no_login_required(self):
         response = self.client.get(reverse("voting:results"))
         self.assertEqual(response.status_code, 200)

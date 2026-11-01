@@ -1,9 +1,9 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView, View
 
 from elections.models import Contestant, Election, Position
 from executives.models import Executive
@@ -171,3 +171,39 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
             "position__title", "name"
         )
         return context
+
+
+class ElectionStartView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        election = get_object_or_404(Election, pk=pk)
+        if election.status != Election.STATUS_UPCOMING:
+            messages.error(request, "This election must be upcoming to start voting.")
+            return redirect("admin_panel:election_list")
+        election.status = Election.STATUS_ONGOING
+        election.modified_by = request.user.adminprofile
+        election.save()
+        return redirect("admin_panel:election_list")
+
+
+class ElectionEndView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        election = get_object_or_404(Election, pk=pk)
+        if election.status != Election.STATUS_ONGOING:
+            messages.error(request, "This election must be ongoing to end voting.")
+            return redirect("admin_panel:election_list")
+        election.status = Election.STATUS_ENDED
+        election.modified_by = request.user.adminprofile
+        election.save()
+        return redirect("admin_panel:election_list")
+
+
+class ElectionPublishResultsView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        election = get_object_or_404(Election, pk=pk)
+        if election.status != Election.STATUS_ENDED or election.is_results_published:
+            messages.error(request, "This election must be ended and not yet published to publish results.")
+            return redirect("admin_panel:election_list")
+        election.is_results_published = True
+        election.modified_by = request.user.adminprofile
+        election.save()
+        return redirect("admin_panel:election_list")

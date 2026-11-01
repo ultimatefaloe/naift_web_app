@@ -289,3 +289,89 @@ class ElectionResultsViewTests(TestCase):
         self.assertTemplateUsed(response, "admin_panel/election_results.html")
         self.assertContains(response, "Jane Doe")
         self.assertContains(response, "President")
+
+
+class ElectionActionViewTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin11", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="upcoming",
+            modified_by=self.admin_profile,
+        )
+
+    def test_start_view_requires_post(self):
+        response = self.client.get(reverse("admin_panel:election_start", args=[self.election.pk]))
+        self.assertEqual(response.status_code, 405)
+
+    def test_start_transitions_upcoming_to_ongoing_and_sets_modified_by(self):
+        other_user = User.objects.create_user(username="admin12", password="pass12345")
+        other_profile = AdminProfile.objects.create(user=other_user, is_admin=True)
+        self.election.modified_by = other_profile
+        self.election.save()
+
+        response = self.client.post(reverse("admin_panel:election_start", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "ongoing")
+        self.assertEqual(self.election.modified_by, self.admin_profile)
+
+    def test_start_rejected_when_election_not_upcoming(self):
+        self.election.status = "ongoing"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_start", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "ongoing")
+
+    def test_end_transitions_ongoing_to_ended_and_sets_modified_by(self):
+        self.election.status = "ongoing"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_end", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "ended")
+        self.assertEqual(self.election.modified_by, self.admin_profile)
+
+    def test_end_rejected_when_election_not_ongoing(self):
+        response = self.client.post(reverse("admin_panel:election_end", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "upcoming")
+
+    def test_publish_results_sets_flag_and_modified_by(self):
+        self.election.status = "ended"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_publish_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertTrue(self.election.is_results_published)
+        self.assertEqual(self.election.modified_by, self.admin_profile)
+
+    def test_publish_results_rejected_when_election_not_ended(self):
+        response = self.client.post(reverse("admin_panel:election_publish_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertFalse(self.election.is_results_published)
+
+    def test_publish_results_rejected_when_already_published(self):
+        self.election.status = "ended"
+        self.election.is_results_published = True
+        self.election.save()
+        other_user = User.objects.create_user(username="admin13", password="pass12345")
+        other_profile = AdminProfile.objects.create(user=other_user, is_admin=True)
+        self.election.modified_by = other_profile
+        self.election.save()
+
+        response = self.client.post(reverse("admin_panel:election_publish_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:election_list"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.modified_by, other_profile)
+
+    def test_election_list_shows_start_button_for_upcoming_election(self):
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertContains(response, "Start Voting")

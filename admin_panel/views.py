@@ -42,6 +42,31 @@ class DashboardView(AdminRequiredMixin, TemplateView):
         context["current_election"] = (
             Election.objects.exclude(status=Election.STATUS_ENDED).order_by("-id").first()
         )
+        context["current_executives"] = Executive.objects.filter(is_current=True)
+
+        ongoing_election = Election.objects.filter(status=Election.STATUS_ONGOING).order_by("-id").first()
+        context["ongoing_election"] = ongoing_election
+        chart_positions = []
+        if ongoing_election is not None:
+            tallies = (
+                Contestant.objects.filter(election=ongoing_election)
+                .select_related("position")
+                .annotate(vote_count=Count("votes"))
+                .order_by("position__title", "position_id", "-vote_count")
+            )
+            for contestant in tallies:
+                if not chart_positions or chart_positions[-1]["position_id"] != contestant.position_id:
+                    chart_positions.append(
+                        {
+                            "position_id": contestant.position_id,
+                            "position_title": contestant.position.title,
+                            "element_id": f"position-{contestant.position_id}-data",
+                            "data": {"labels": [], "votes": []},
+                        }
+                    )
+                chart_positions[-1]["data"]["labels"].append(contestant.name)
+                chart_positions[-1]["data"]["votes"].append(contestant.vote_count)
+        context["chart_positions"] = chart_positions
         return context
 
 

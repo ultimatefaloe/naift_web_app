@@ -51,6 +51,104 @@ class DashboardAccessTests(TestCase):
         self.assertRedirects(dashboard_response, reverse("admin_panel:login"))
 
 
+class DashboardStatisticsTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_dashboard_stats", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_no_ongoing_election_has_no_chart_positions(self):
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertIsNone(response.context["ongoing_election"])
+        self.assertEqual(response.context["chart_positions"], [])
+
+    def test_upcoming_or_ended_election_does_not_count_as_ongoing(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="upcoming",
+            modified_by=self.admin_profile,
+        )
+        Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            status="ended",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertIsNone(response.context["ongoing_election"])
+        self.assertEqual(response.context["chart_positions"], [])
+
+    def test_ongoing_election_with_contested_position_has_correct_tallies(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        winner = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position, election=election
+        )
+        loser = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me too.", position=position, election=election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        student2 = Student.objects.create(
+            first_name="B", last_name="Two", matric_number="2026/1/00002CF", level="300"
+        )
+        Vote.objects.create(student=student1, election=election, position=position, contestant=winner)
+        Vote.objects.create(student=student2, election=election, position=position, contestant=winner)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        chart_positions = response.context["chart_positions"]
+        self.assertEqual(len(chart_positions), 1)
+        self.assertEqual(chart_positions[0]["position_title"], "President")
+        self.assertEqual(chart_positions[0]["data"]["labels"], ["Jane Doe", "John Roe"])
+        self.assertEqual(chart_positions[0]["data"]["votes"], [2, 0])
+
+    def test_ongoing_election_with_unopposed_position_has_single_bar(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position, election=election
+        )
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        chart_positions = response.context["chart_positions"]
+        self.assertEqual(len(chart_positions), 1)
+        self.assertEqual(chart_positions[0]["data"]["labels"], ["Jane Doe"])
+        self.assertEqual(chart_positions[0]["data"]["votes"], [0])
+
+    def test_current_executive_widget_shows_only_current_executives(self):
+        current = Executive.objects.create(
+            name="Jane Doe", position="President", session="2026/2027", is_current=True
+        )
+        past = Executive.objects.create(
+            name="John Smith", position="President", session="2025/2026", is_current=False
+        )
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertIn(current, response.context["current_executives"])
+        self.assertNotIn(past, response.context["current_executives"])
+
+    def test_current_executive_widget_present_regardless_of_election_state(self):
+        Executive.objects.create(name="Jane Doe", position="President", session="2026/2027", is_current=True)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertIn(
+            Executive.objects.get(name="Jane Doe"),
+            response.context["current_executives"],
+        )
+
+
 class LoginViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin5", password="pass12345")

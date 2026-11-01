@@ -165,6 +165,8 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Kept in sync with voting.views.results_view's tally query — update
+        # both if the ordering/annotation logic ever changes.
         context["tallies"] = (
             Contestant.objects.filter(election=self.object)
             .select_related("position")

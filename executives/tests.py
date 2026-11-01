@@ -41,6 +41,13 @@ class CurrentExecutiveViewTests(TestCase):
         self.assertContains(response, "John Smith")
         self.assertContains(response, "grayscale")
 
+    def test_current_and_past_sections_both_render_together(self):
+        response = self.client.get(reverse("executives:current"))
+        self.assertContains(response, "Current Executive")
+        self.assertContains(response, "Jane Doe")
+        self.assertContains(response, "Past Executive — 2025/2026")
+        self.assertContains(response, "John Smith")
+
     def test_no_past_executives_shows_no_past_section(self):
         self.past.delete()
         response = self.client.get(reverse("executives:current"))

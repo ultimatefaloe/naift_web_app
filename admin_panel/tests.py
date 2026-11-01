@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from elections.models import Contestant, Election, Position
 from executives.models import Executive
+from voting.models import Student, Vote
 
 from .models import AdminProfile
 
@@ -289,6 +290,17 @@ class ElectionResultsViewTests(TestCase):
         self.assertTemplateUsed(response, "admin_panel/election_results.html")
         self.assertContains(response, "Jane Doe")
         self.assertContains(response, "President")
+
+    def test_results_view_shows_vote_tally(self):
+        contestant = Contestant.objects.filter(election=self.election).get()
+        student = Student.objects.create(
+            first_name="John", last_name="Smith", matric_number="2022/1/90976CF", level="300"
+        )
+        Vote.objects.create(
+            student=student, election=self.election, position=self.position, contestant=contestant
+        )
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertContains(response, "1 vote")
 
 
 class ElectionActionViewTests(TestCase):

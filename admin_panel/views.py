@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
@@ -164,11 +165,11 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Order explicitly by position so {% regroup %} (which assumes the
-        # list is already sorted by the grouping key) groups correctly —
-        # Contestant/Position have no default ordering of their own.
-        context["contestants"] = self.object.contestants.select_related("position").order_by(
-            "position__title", "name"
+        context["tallies"] = (
+            Contestant.objects.filter(election=self.object)
+            .select_related("position")
+            .annotate(vote_count=Count("votes"))
+            .order_by("position__title", "position_id", "-vote_count")
         )
         return context
 

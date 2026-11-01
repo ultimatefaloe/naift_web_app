@@ -4,14 +4,17 @@
 
 {% block content %}
 <h1 class="font-display text-3xl text-brand-purple mb-2">{{ election.session }} Results</h1>
-<p class="text-brand-black/70 mb-8">Status: {{ election.get_status_display }}. Vote tallies will appear here once the voting system is live — this view currently lists the ballot composition for each position so admins can verify data entry before voting opens.</p>
+<p class="text-brand-black/70 mb-8">Status: {{ election.get_status_display }}.</p>
 
-{% regroup contestants by position as position_list %}
+{% regroup tallies by position as position_list %}
 {% for position in position_list %}
     <h2 class="font-display text-2xl text-brand-black mb-3">{{ position.grouper }}</h2>
-    <ul class="list-disc list-inside mb-8">
+    <ul class="mb-8 space-y-2">
         {% for contestant in position.list %}
-            <li>{{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}</li>
+            <li class="flex justify-between border-b border-brand-black/10 py-2">
+                <span>{{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}</span>
+                <span class="font-display text-brand-purple">{{ contestant.vote_count }} vote{{ contestant.vote_count|pluralize }}</span>
+            </li>
         {% endfor %}
     </ul>
 {% empty %}

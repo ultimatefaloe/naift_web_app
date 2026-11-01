@@ -515,3 +515,21 @@ class SeedStudentsCommandTests(TestCase):
             self.assertIn("Row 2", err.getvalue())
         finally:
             os.unlink(csv_path)
+
+
+class VotingNavTests(TestCase):
+    def test_nav_includes_vote_link(self):
+        response = self.client.get(reverse("voting:login"))
+        self.assertContains(response, reverse("voting:vote_entry"))
+
+    def test_nav_includes_results_link(self):
+        response = self.client.get(reverse("voting:login"))
+        self.assertContains(response, reverse("voting:results"))
+
+    def test_nav_includes_past_results_link(self):
+        response = self.client.get(reverse("voting:login"))
+        self.assertContains(response, reverse("voting:results_archive"))
+
+    def test_nav_includes_public_site_link(self):
+        response = self.client.get(reverse("voting:login"))
+        self.assertContains(response, reverse("core:home"))

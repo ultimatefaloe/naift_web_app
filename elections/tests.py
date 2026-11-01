@@ -1,10 +1,13 @@
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import ProtectedError
+from django.db.models import Count, ProtectedError
 from django.test import TestCase
 
 from admin_panel.models import AdminProfile
 from .models import Position, Election, Contestant
+from voting.models import Student, Vote
+
+from .results import mark_winners
 
 
 class PositionModelTests(TestCase):
@@ -111,3 +114,98 @@ class ElectionModelTests(TestCase):
         )
         with self.assertRaises(ProtectedError):
             self.admin_profile.delete()
+
+
+class MarkWinnersTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin_markwinners", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ended",
+            modified_by=self.admin_profile,
+        )
+
+    def _tallies(self):
+        return (
+            Contestant.objects.filter(election=self.election)
+            .select_related("position")
+            .annotate(vote_count=Count("votes"))
+            .order_by("position__title", "position_id", "-vote_count")
+        )
+
+    def test_unopposed_contestant_wins_regardless_of_vote_count(self):
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position, election=self.election
+        )
+        tallies = mark_winners(self._tallies())
+        self.assertTrue(tallies[0].is_winner)
+
+    def test_contestant_with_strictly_more_votes_wins(self):
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        winner = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position, election=self.election
+        )
+        loser = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me too.", position=position, election=self.election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        student2 = Student.objects.create(
+            first_name="B", last_name="Two", matric_number="2026/1/00002CF", level="300"
+        )
+        student3 = Student.objects.create(
+            first_name="C", last_name="Three", matric_number="2026/1/00003CF", level="300"
+        )
+        Vote.objects.create(student=student1, election=self.election, position=position, contestant=winner)
+        Vote.objects.create(student=student2, election=self.election, position=position, contestant=winner)
+        Vote.objects.create(student=student3, election=self.election, position=position, contestant=loser)
+        tallies = mark_winners(self._tallies())
+        self.assertTrue(tallies[0].is_winner)
+        self.assertFalse(tallies[1].is_winner)
+
+    def test_exact_tie_marks_no_winner(self):
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        contestant_a = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position, election=self.election
+        )
+        contestant_b = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me too.", position=position, election=self.election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        student2 = Student.objects.create(
+            first_name="B", last_name="Two", matric_number="2026/1/00002CF", level="300"
+        )
+        Vote.objects.create(student=student1, election=self.election, position=position, contestant=contestant_a)
+        Vote.objects.create(student=student2, election=self.election, position=position, contestant=contestant_b)
+        tallies = mark_winners(self._tallies())
+        self.assertFalse(tallies[0].is_winner)
+        self.assertFalse(tallies[1].is_winner)
+
+    def test_multiple_positions_evaluated_independently(self):
+        position_a = Position.objects.create(title="President", modified_by=self.admin_profile)
+        position_b = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        contestant_a = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position_a, election=self.election
+        )
+        contestant_b1 = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me.", position=position_b, election=self.election
+        )
+        contestant_b2 = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for me too.", position=position_b, election=self.election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        Vote.objects.create(student=student1, election=self.election, position=position_b, contestant=contestant_b1)
+        tallies = mark_winners(self._tallies())
+        by_id = {t.pk: t for t in tallies}
+        self.assertTrue(by_id[contestant_a.pk].is_winner)
+        self.assertTrue(by_id[contestant_b1.pk].is_winner)
+        self.assertFalse(by_id[contestant_b2.pk].is_winner)

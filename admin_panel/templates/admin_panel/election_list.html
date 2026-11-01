@@ -29,19 +29,19 @@
                     <a href="{% url 'admin_panel:election_results' election.pk %}" class="text-brand-purple hover:underline">Results</a>
                     {% if election.status == "upcoming" %}
                         &middot;
-                        <form method="post" action="{% url 'admin_panel:election_start' election.pk %}" class="inline" onsubmit="return confirm('Start voting for {{ election.session }}?');">
+                        <form method="post" action="{% url 'admin_panel:election_start' election.pk %}" class="inline" onsubmit="return confirm('Start voting for {{ election.session|escapejs }}?');">
                             {% csrf_token %}
                             <button type="submit" class="text-brand-purple hover:underline">Start Voting</button>
                         </form>
                     {% elif election.status == "ongoing" %}
                         &middot;
-                        <form method="post" action="{% url 'admin_panel:election_end' election.pk %}" class="inline" onsubmit="return confirm('End voting for {{ election.session }}?');">
+                        <form method="post" action="{% url 'admin_panel:election_end' election.pk %}" class="inline" onsubmit="return confirm('End voting for {{ election.session|escapejs }}?');">
                             {% csrf_token %}
                             <button type="submit" class="text-brand-purple hover:underline">End Voting</button>
                         </form>
                     {% elif election.status == "ended" and not election.is_results_published %}
                         &middot;
-                        <form method="post" action="{% url 'admin_panel:election_publish_results' election.pk %}" class="inline" onsubmit="return confirm('Publish results for {{ election.session }}? This makes them publicly visible.');">
+                        <form method="post" action="{% url 'admin_panel:election_publish_results' election.pk %}" class="inline" onsubmit="return confirm('Publish results for {{ election.session|escapejs }}? This makes them publicly visible.');">
                             {% csrf_token %}
                             <button type="submit" class="text-brand-purple hover:underline">Publish Result</button>
                         </form>

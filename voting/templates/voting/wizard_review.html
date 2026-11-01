@@ -8,8 +8,10 @@
 <ul class="mb-8 space-y-3">
     {% for contestant in selections %}
         <li class="border border-brand-purple/20 rounded-lg p-4">
-            <span class="font-display">{{ contestant.position.title }}:</span>
-            {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
+            <a href="{% url 'voting:wizard_step' contestant.position.pk %}" class="block hover:underline">
+                <span class="font-display">{{ contestant.position.title }}:</span>
+                {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
+            </a>
         </li>
     {% endfor %}
 </ul>

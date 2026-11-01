@@ -371,6 +371,14 @@ class WizardStepEditModeTests(TestCase):
         self.assertEqual(self.client.session["vote_picks"][str(self.position_a.pk)], self.contestant_a2.pk)
         self.assertEqual(Vote.objects.count(), 0)
 
+    def test_review_page_link_leads_to_wizard_step_in_edit_mode(self):
+        review_response = self.client.get(reverse("voting:wizard_review"))
+        self.assertContains(
+            review_response, f'href="{reverse("voting:wizard_step", args=[self.position_a.pk])}"'
+        )
+        step_response = self.client.get(reverse("voting:wizard_step", args=[self.position_a.pk]))
+        self.assertContains(step_response, 'name="nav" value="submit"')
+
 
 class ResultsViewTests(TestCase):
     def setUp(self):
@@ -468,6 +476,12 @@ class WizardReviewTests(TestCase):
         response = self.client.get(reverse("voting:wizard_review"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Jane Doe")
+
+    def test_review_page_links_to_each_positions_wizard_step(self):
+        response = self.client.get(reverse("voting:wizard_review"))
+        self.assertContains(
+            response, f'href="{reverse("voting:wizard_step", args=[self.position.pk])}"'
+        )
 
     def test_post_submits_votes_atomically_and_clears_session(self):
         response = self.client.post(reverse("voting:wizard_review"))

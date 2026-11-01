@@ -9,3 +9,8 @@ class CurrentExecutiveView(ListView):
 
     def get_queryset(self):
         return Executive.objects.filter(is_current=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["past"] = Executive.objects.filter(is_current=False).order_by("-session")
+        return context

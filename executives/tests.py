@@ -34,3 +34,14 @@ class CurrentExecutiveViewTests(TestCase):
         response = self.client.get(reverse("executives:current"))
         self.assertIn(self.current, response.context["executives"])
         self.assertNotIn(self.past, response.context["executives"])
+
+    def test_past_executives_render_grouped_and_grayscale(self):
+        response = self.client.get(reverse("executives:current"))
+        self.assertContains(response, "Past Executive — 2025/2026")
+        self.assertContains(response, "John Smith")
+        self.assertContains(response, "grayscale")
+
+    def test_no_past_executives_shows_no_past_section(self):
+        self.past.delete()
+        response = self.client.get(reverse("executives:current"))
+        self.assertNotContains(response, "Past Executives")

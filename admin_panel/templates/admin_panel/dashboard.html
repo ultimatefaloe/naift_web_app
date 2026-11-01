@@ -23,4 +23,45 @@
         <p>Current Election</p>
     </div>
 </div>
+
+<h2 class="font-display text-2xl text-brand-black mb-4">Live Voting</h2>
+{% if ongoing_election %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    {% for position in chart_positions %}
+        <div class="border border-brand-purple/20 rounded-lg p-5 mb-6">
+            <h3 class="font-display text-lg text-brand-black mb-3">{{ position.position_title }}</h3>
+            <canvas id="chart-{{ position.position_id }}" height="120"></canvas>
+            {{ position.data|json_script:position.element_id }}
+        </div>
+        <script>
+            (function () {
+                var data = JSON.parse(document.getElementById("{{ position.element_id }}").textContent);
+                new Chart(document.getElementById("chart-{{ position.position_id }}"), {
+                    type: "bar",
+                    data: {
+                        labels: data.labels,
+                        datasets: [{ label: "Votes", data: data.votes, backgroundColor: "#4C1D95" }],
+                    },
+                    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+                });
+            })();
+        </script>
+    {% endfor %}
+{% else %}
+    <p class="text-lg mb-10">No voting currently in progress.</p>
+{% endif %}
+
+<h2 class="font-display text-2xl text-brand-black mb-4 mt-4">Current Executive</h2>
+{% if current_executives %}
+    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+        {% for executive in current_executives %}
+            <div class="border border-brand-purple/20 rounded-lg p-4 text-center">
+                <p class="font-display text-brand-black">{{ executive.name }}</p>
+                <p class="text-brand-purple text-sm">{{ executive.position }}</p>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-lg mb-10">No current executive has been published yet.</p>
+{% endif %}
 {% endblock %}

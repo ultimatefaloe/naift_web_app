@@ -149,6 +149,44 @@ class DashboardStatisticsTests(TestCase):
         )
 
 
+class DashboardChartRenderingTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_dashboard_chart", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_no_ongoing_election_shows_message_and_no_canvas(self):
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, "No voting currently in progress")
+        self.assertNotContains(response, "<canvas")
+
+    def test_ongoing_election_renders_canvas_per_position(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        position_a = Position.objects.create(title="President", modified_by=self.admin_profile)
+        position_b = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position_a, election=election
+        )
+        Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me.", position=position_b, election=election
+        )
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, f'id="chart-{position_a.pk}"')
+        self.assertContains(response, f'id="chart-{position_b.pk}"')
+        self.assertNotContains(response, "No voting currently in progress")
+
+    def test_current_executive_widget_renders_executive_names(self):
+        Executive.objects.create(name="Jane Doe", position="President", session="2026/2027", is_current=True)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, "Jane Doe")
+
+
 class LoginViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin5", password="pass12345")

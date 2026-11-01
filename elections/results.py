@@ -4,8 +4,12 @@ def mark_winners(tallies):
     group's first contestant when their vote_count strictly exceeds the
     second-place count in that same position group — so an unopposed
     contestant (no second place to compare against) always wins, and an exact
-    tie for first marks no one, rather than guessing a false winner."""
-    tallies = list(tallies)
+    tie for first marks no one, rather than guessing a false winner.
+
+    Defensively re-sorts by position_id (a stable sort, so it only guards
+    against non-contiguous position groups — it does not reorder or affect
+    the required -vote_count ordering within an already-correct group)."""
+    tallies = sorted(tallies, key=lambda c: c.position_id)
     for contestant in tallies:
         contestant.is_winner = False
     i = 0

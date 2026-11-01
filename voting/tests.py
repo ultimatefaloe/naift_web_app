@@ -276,6 +276,102 @@ class WizardStepTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class WizardStepEditModeTests(TestCase):
+    def setUp(self):
+        self.student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2022/1/90976CF", level="300"
+        )
+        session = self.client.session
+        session["student_id"] = self.student.id
+        session.save()
+        user = User.objects.create_user(username="admin_voting_edit", password="pass12345")
+        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=admin_profile,
+        )
+        # Titles chosen so "President" sorts before "Secretary" — matches the
+        # title-ordering wizard_step/vote_entry already use.
+        self.position_a = Position.objects.create(title="President", modified_by=admin_profile)
+        self.position_b = Position.objects.create(title="Secretary", modified_by=admin_profile)
+        self.contestant_a = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for progress.", position=self.position_a, election=self.election
+        )
+        self.contestant_a2 = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for change.", position=self.position_a, election=self.election
+        )
+        self.contestant_b = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=self.position_b, election=self.election
+        )
+        # Every position already has a pick — this is what makes wizard_step
+        # consider this an edit-mode visit rather than first-pass voting.
+        session = self.client.session
+        session["vote_picks"] = {
+            str(self.position_a.pk): self.contestant_a.pk,
+            str(self.position_b.pk): self.contestant_b.pk,
+        }
+        session.save()
+
+    def test_wizard_step_in_edit_mode_preselects_current_pick(self):
+        response = self.client.get(reverse("voting:wizard_step", args=[self.position_a.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'value="{self.contestant_a.pk}" required checked')
+        self.assertNotContains(response, f'value="{self.contestant_a2.pk}" required checked')
+
+    def test_first_position_in_edit_mode_has_no_previous_button(self):
+        response = self.client.get(reverse("voting:wizard_step", args=[self.position_a.pk]))
+        self.assertNotContains(response, 'name="nav" value="previous"')
+        self.assertContains(response, 'name="nav" value="next"')
+        self.assertContains(response, 'name="nav" value="submit"')
+
+    def test_last_position_in_edit_mode_has_no_next_button(self):
+        response = self.client.get(reverse("voting:wizard_step", args=[self.position_b.pk]))
+        self.assertContains(response, 'name="nav" value="previous"')
+        self.assertNotContains(response, 'name="nav" value="next"')
+        self.assertContains(response, 'name="nav" value="submit"')
+
+    def test_first_pass_voting_has_no_edit_mode_controls(self):
+        # Drop one position's pick so the "every position already has a pick"
+        # condition is false — this is what first-pass voting looks like.
+        session = self.client.session
+        session["vote_picks"] = {str(self.position_a.pk): self.contestant_a.pk}
+        session.save()
+        response = self.client.get(reverse("voting:wizard_step", args=[self.position_b.pk]))
+        self.assertNotContains(response, 'name="nav"')
+        self.assertContains(response, ">Next<")
+
+    def test_post_nav_next_saves_pick_and_redirects_to_next_position(self):
+        response = self.client.post(
+            reverse("voting:wizard_step", args=[self.position_a.pk]),
+            {"contestant": self.contestant_a2.pk, "nav": "next"},
+        )
+        self.assertRedirects(
+            response, reverse("voting:wizard_step", args=[self.position_b.pk]), fetch_redirect_response=False
+        )
+        self.assertEqual(self.client.session["vote_picks"][str(self.position_a.pk)], self.contestant_a2.pk)
+
+    def test_post_nav_previous_saves_pick_and_redirects_to_previous_position(self):
+        response = self.client.post(
+            reverse("voting:wizard_step", args=[self.position_b.pk]),
+            {"contestant": self.contestant_b.pk, "nav": "previous"},
+        )
+        self.assertRedirects(
+            response, reverse("voting:wizard_step", args=[self.position_a.pk]), fetch_redirect_response=False
+        )
+
+    def test_post_nav_submit_saves_pick_and_redirects_to_review_without_voting(self):
+        response = self.client.post(
+            reverse("voting:wizard_step", args=[self.position_a.pk]),
+            {"contestant": self.contestant_a2.pk, "nav": "submit"},
+        )
+        self.assertRedirects(response, reverse("voting:wizard_review"), fetch_redirect_response=False)
+        self.assertEqual(self.client.session["vote_picks"][str(self.position_a.pk)], self.contestant_a2.pk)
+        self.assertEqual(Vote.objects.count(), 0)
+
+
 class ResultsViewTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_voting5", password="pass12345")

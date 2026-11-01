@@ -74,6 +74,11 @@ def wizard_step(request, position_id):
         return redirect("voting:vote_entry")
     position = get_object_or_404(Position, pk=position_id)
     contestants = position.contestants.filter(election=election)
+    positions = list(Position.objects.filter(contestants__election=election).distinct().order_by("title"))
+    picks = request.session.get("vote_picks", {})
+    is_edit_mode = bool(positions) and all(str(p.id) in picks for p in positions)
+    current_index = next((i for i, p in enumerate(positions) if p.id == position.id), None)
+
     if request.method == "POST":
         contestant_id = request.POST.get("contestant")
         try:
@@ -81,11 +86,37 @@ def wizard_step(request, position_id):
         except (TypeError, ValueError):
             raise Http404("Invalid contestant selection.")
         contestant = get_object_or_404(Contestant, pk=contestant_id, position=position, election=election)
-        picks = request.session.get("vote_picks", {})
         picks[str(position.id)] = contestant.id
         request.session["vote_picks"] = picks
+
+        if is_edit_mode:
+            nav = request.POST.get("nav")
+            if nav == "previous" and current_index is not None and current_index > 0:
+                return redirect("voting:wizard_step", position_id=positions[current_index - 1].id)
+            if nav == "next" and current_index is not None and current_index < len(positions) - 1:
+                return redirect("voting:wizard_step", position_id=positions[current_index + 1].id)
+            return redirect("voting:wizard_review")
+
         return redirect("voting:vote_entry")
-    return render(request, "voting/wizard_step.html", {"position": position, "contestants": contestants})
+
+    previous_position = positions[current_index - 1] if is_edit_mode and current_index else None
+    next_position = (
+        positions[current_index + 1]
+        if is_edit_mode and current_index is not None and current_index < len(positions) - 1
+        else None
+    )
+    return render(
+        request,
+        "voting/wizard_step.html",
+        {
+            "position": position,
+            "contestants": contestants,
+            "is_edit_mode": is_edit_mode,
+            "current_pick_id": picks.get(str(position.id)),
+            "previous_position": previous_position,
+            "next_position": next_position,
+        },
+    )
 
 
 @student_required

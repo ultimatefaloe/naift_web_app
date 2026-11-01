@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView, View
 
 from elections.models import Contestant, Election, Position
+from elections.results import mark_winners
 from executives.models import Executive
 from .forms import ElectionForm
 from .mixins import AdminRequiredMixin
@@ -167,7 +168,7 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         # Kept in sync with voting.views.results_view's tally query — update
         # both if the ordering/annotation logic ever changes.
-        context["tallies"] = (
+        context["tallies"] = mark_winners(
             Contestant.objects.filter(election=self.object)
             .select_related("position")
             .annotate(vote_count=Count("votes"))

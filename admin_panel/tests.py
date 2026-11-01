@@ -302,6 +302,63 @@ class ElectionResultsViewTests(TestCase):
         response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
         self.assertContains(response, "1 vote")
 
+    def test_results_view_shows_winner_badge_for_unopposed_contestant(self):
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertContains(response, "Winner")
+
+    def test_results_view_shows_no_winner_badge_for_tied_position(self):
+        other_position = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        contestant_a = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=other_position, election=self.election
+        )
+        contestant_b = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for change.", position=other_position, election=self.election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        student2 = Student.objects.create(
+            first_name="B", last_name="Two", matric_number="2026/1/00002CF", level="300"
+        )
+        Vote.objects.create(
+            student=student1, election=self.election, position=other_position, contestant=contestant_a
+        )
+        Vote.objects.create(
+            student=student2, election=self.election, position=other_position, contestant=contestant_b
+        )
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        # setUp's "Jane Doe" (unopposed in "President") still wins — exactly
+        # one "Winner" badge, even though this tied "Secretary" position has none.
+        self.assertContains(response, "Winner", count=1)
+
+    def test_results_view_shows_winner_badge_on_correct_contestant_in_contested_position(self):
+        other_position = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        winner = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for stability.", position=other_position, election=self.election
+        )
+        loser = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for change.", position=other_position, election=self.election
+        )
+        student1 = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        student2 = Student.objects.create(
+            first_name="B", last_name="Two", matric_number="2026/1/00002CF", level="300"
+        )
+        student3 = Student.objects.create(
+            first_name="C", last_name="Three", matric_number="2026/1/00003CF", level="300"
+        )
+        Vote.objects.create(student=student1, election=self.election, position=other_position, contestant=winner)
+        Vote.objects.create(student=student2, election=self.election, position=other_position, contestant=winner)
+        Vote.objects.create(student=student3, election=self.election, position=other_position, contestant=loser)
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        content = response.content.decode()
+        john_index = content.index("John Roe")
+        winner_badge_index = content.index("Winner", john_index)
+        amina_index = content.index("Amina Bello")
+        self.assertLess(winner_badge_index, amina_index)
+        self.assertNotIn("Winner", content[content.index("Amina Bello"):])
+
 
 class ElectionActionViewTests(TestCase):
     def setUp(self):

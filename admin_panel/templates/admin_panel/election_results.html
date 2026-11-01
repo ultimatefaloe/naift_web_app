@@ -11,8 +11,13 @@
     <h2 class="font-display text-2xl text-brand-black mb-3">{{ position.grouper }}</h2>
     <ul class="mb-8 space-y-2">
         {% for contestant in position.list %}
-            <li class="flex justify-between border-b border-brand-black/10 py-2">
-                <span>{{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}</span>
+            <li class="flex justify-between items-center border-b border-brand-black/10 py-2">
+                <span class="flex items-center gap-2">
+                    {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
+                    {% if contestant.is_winner %}
+                        <span class="text-xs font-display uppercase tracking-wide bg-brand-purple text-brand-white px-2 py-0.5 rounded-full">Winner</span>
+                    {% endif %}
+                </span>
                 <span class="font-display text-brand-purple">{{ contestant.vote_count }} vote{{ contestant.vote_count|pluralize }}</span>
             </li>
         {% endfor %}

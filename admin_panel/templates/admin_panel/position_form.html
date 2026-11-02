@@ -3,6 +3,7 @@
 {% block title %}Position · NAIFT Admin{% endblock %}
 
 {% block content %}
+<a href="{% url 'admin_panel:position_list' %}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Positions</a>
 <h1 class="font-display text-3xl text-brand-purple mb-8">{% if object %}Edit{% else %}Add{% endif %} Position</h1>
 
 <form method="post" class="flex flex-col gap-4 max-w-md">

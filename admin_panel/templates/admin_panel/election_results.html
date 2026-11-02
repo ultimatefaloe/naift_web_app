@@ -3,6 +3,7 @@
 {% block title %}{{ election.session }} Results · NAIFT Admin{% endblock %}
 
 {% block content %}
+<a href="{% url 'admin_panel:election_list' %}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Elections</a>
 <h1 class="font-display text-3xl text-brand-purple mb-2">{{ election.session }} Results</h1>
 <p class="text-brand-black/70 mb-8">Status: {{ election.get_status_display }}.</p>
 

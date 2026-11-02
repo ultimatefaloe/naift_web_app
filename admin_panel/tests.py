@@ -580,3 +580,36 @@ class ElectionActionViewTests(TestCase):
     def test_election_list_shows_start_button_for_upcoming_election(self):
         response = self.client.get(reverse("admin_panel:election_list"))
         self.assertContains(response, "Start Voting")
+
+
+class AdminFormBackLinkTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_backlinks", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_position_form_links_back_to_position_list(self):
+        response = self.client.get(reverse("admin_panel:position_create"))
+        self.assertContains(response, f'href="{reverse("admin_panel:position_list")}"')
+
+    def test_contestant_form_links_back_to_contestant_list(self):
+        response = self.client.get(reverse("admin_panel:contestant_create"))
+        self.assertContains(response, f'href="{reverse("admin_panel:contestant_list")}"')
+
+    def test_executive_form_links_back_to_executive_list(self):
+        response = self.client.get(reverse("admin_panel:executive_create"))
+        self.assertContains(response, f'href="{reverse("admin_panel:executive_list")}"')
+
+    def test_election_form_links_back_to_election_list(self):
+        response = self.client.get(reverse("admin_panel:election_create"))
+        self.assertContains(response, f'href="{reverse("admin_panel:election_list")}"')
+
+    def test_election_results_links_back_to_election_list(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("admin_panel:election_results", args=[election.pk]))
+        self.assertContains(response, f'href="{reverse("admin_panel:election_list")}"')

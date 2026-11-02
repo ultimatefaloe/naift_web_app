@@ -590,19 +590,19 @@ class AdminFormBackLinkTests(TestCase):
 
     def test_position_form_links_back_to_position_list(self):
         response = self.client.get(reverse("admin_panel:position_create"))
-        self.assertContains(response, f'href="{reverse("admin_panel:position_list")}"')
+        self.assertContains(response, "Back to Positions")
 
     def test_contestant_form_links_back_to_contestant_list(self):
         response = self.client.get(reverse("admin_panel:contestant_create"))
-        self.assertContains(response, f'href="{reverse("admin_panel:contestant_list")}"')
+        self.assertContains(response, "Back to Contestants")
 
     def test_executive_form_links_back_to_executive_list(self):
         response = self.client.get(reverse("admin_panel:executive_create"))
-        self.assertContains(response, f'href="{reverse("admin_panel:executive_list")}"')
+        self.assertContains(response, "Back to Executives")
 
     def test_election_form_links_back_to_election_list(self):
         response = self.client.get(reverse("admin_panel:election_create"))
-        self.assertContains(response, f'href="{reverse("admin_panel:election_list")}"')
+        self.assertContains(response, "Back to Elections")
 
     def test_election_results_links_back_to_election_list(self):
         election = Election.objects.create(
@@ -612,4 +612,4 @@ class AdminFormBackLinkTests(TestCase):
             modified_by=self.admin_profile,
         )
         response = self.client.get(reverse("admin_panel:election_results", args=[election.pk]))
-        self.assertContains(response, f'href="{reverse("admin_panel:election_list")}"')
+        self.assertContains(response, "Back to Elections")

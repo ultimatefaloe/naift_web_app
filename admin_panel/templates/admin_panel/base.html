@@ -20,6 +20,7 @@
             <a href="{% url 'admin_panel:contestant_list' %}" class="hover:text-brand-purple">Contestants</a>
             <a href="{% url 'admin_panel:executive_list' %}" class="hover:text-brand-purple">Executives</a>
             <a href="{% url 'admin_panel:election_list' %}" class="hover:text-brand-purple">Elections</a>
+            <a href="{% url 'core:home' %}" class="hover:text-brand-purple">Public Site</a>
             <form method="post" action="{% url 'admin_panel:logout' %}" class="inline">
                 {% csrf_token %}
                 <button type="submit" class="hover:text-brand-purple">Logout</button>

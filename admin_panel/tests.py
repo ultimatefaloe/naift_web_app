@@ -495,6 +495,18 @@ class ElectionResultsViewTests(TestCase):
         self.assertLess(winner_badge_index, amina_index)
         self.assertNotIn("Winner", content[content.index("Amina Bello"):])
 
+    def test_results_view_shows_public_results_link_when_published(self):
+        self.election.is_results_published = True
+        self.election.save()
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertContains(
+            response, f'href="{reverse("voting:results_detail", args=[self.election.pk])}"'
+        )
+
+    def test_results_view_hides_public_results_link_when_not_published(self):
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertNotContains(response, "View Public Results")
+
 
 class ElectionActionViewTests(TestCase):
     def setUp(self):
@@ -702,3 +714,14 @@ class ContestantListFilterTests(TestCase):
         response = self.client.get(reverse("admin_panel:position_list"))
         expected_url = reverse("admin_panel:contestant_list") + f"?position={self.position_a.pk}"
         self.assertContains(response, f'href="{expected_url}"')
+
+
+class AdminNavTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_nav", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_nav_includes_public_site_link(self):
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, f'href="{reverse("core:home")}" class="hover:text-brand-purple">Public Site')

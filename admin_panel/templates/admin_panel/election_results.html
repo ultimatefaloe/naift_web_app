@@ -5,7 +5,12 @@
 {% block content %}
 <a href="{% url 'admin_panel:election_list' %}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Elections</a>
 <h1 class="font-display text-3xl text-brand-purple mb-2">{{ election.session }} Results</h1>
-<p class="text-brand-black/70 mb-8">Status: {{ election.get_status_display }}.</p>
+<p class="text-brand-black/70 mb-2">Status: {{ election.get_status_display }}.</p>
+{% if election.is_results_published %}
+    <p class="mb-8"><a href="{% url 'voting:results_detail' election.pk %}" class="text-brand-purple hover:underline">View Public Results</a></p>
+{% else %}
+    <div class="mb-8"></div>
+{% endif %}
 
 {% regroup tallies by position as position_list %}
 {% for position in position_list %}

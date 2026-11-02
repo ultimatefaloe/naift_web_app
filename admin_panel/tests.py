@@ -681,6 +681,11 @@ class ContestantListFilterTests(TestCase):
         contestants = list(response.context["contestants"])
         self.assertEqual(contestants, [self.contestant_1])
 
+    def test_malformed_filter_value_is_ignored_instead_of_crashing(self):
+        response = self.client.get(reverse("admin_panel:contestant_list"), {"election": "not-a-number"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["contestants"]), 3)
+
     def test_election_list_links_to_filtered_contestants(self):
         response = self.client.get(reverse("admin_panel:election_list"))
         expected_url = reverse("admin_panel:contestant_list") + f"?election={self.election_a.pk}"

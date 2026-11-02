@@ -113,9 +113,9 @@ class ContestantListView(AdminRequiredMixin, ListView):
         queryset = Contestant.objects.select_related("position", "election")
         election_id = self.request.GET.get("election")
         position_id = self.request.GET.get("position")
-        if election_id:
+        if election_id and election_id.isdigit():
             queryset = queryset.filter(election_id=election_id)
-        if position_id:
+        if position_id and position_id.isdigit():
             queryset = queryset.filter(position_id=position_id)
         return queryset
 

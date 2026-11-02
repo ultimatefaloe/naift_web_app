@@ -686,6 +686,13 @@ class ContestantListFilterTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["contestants"]), 3)
 
+    def test_unicode_digit_filter_value_is_ignored_instead_of_crashing(self):
+        # '²' (superscript two) passes str.isdigit() but int('²') raises
+        # ValueError — a naive isdigit() guard wouldn't catch this.
+        response = self.client.get(reverse("admin_panel:contestant_list"), {"election": "²"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["contestants"]), 3)
+
     def test_election_list_links_to_filtered_contestants(self):
         response = self.client.get(reverse("admin_panel:election_list"))
         expected_url = reverse("admin_panel:contestant_list") + f"?election={self.election_a.pk}"

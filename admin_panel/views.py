@@ -111,13 +111,22 @@ class ContestantListView(AdminRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Contestant.objects.select_related("position", "election")
-        election_id = self.request.GET.get("election")
-        position_id = self.request.GET.get("position")
-        if election_id and election_id.isdigit():
+        election_id = self._parse_filter_id(self.request.GET.get("election"))
+        position_id = self._parse_filter_id(self.request.GET.get("position"))
+        if election_id is not None:
             queryset = queryset.filter(election_id=election_id)
-        if position_id and position_id.isdigit():
+        if position_id is not None:
             queryset = queryset.filter(position_id=position_id)
         return queryset
+
+    @staticmethod
+    def _parse_filter_id(value):
+        if not value:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
 
 class ContestantCreateView(AdminRequiredMixin, CreateView):

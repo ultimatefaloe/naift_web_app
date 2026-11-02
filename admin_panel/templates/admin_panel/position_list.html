@@ -24,6 +24,8 @@
                 <td class="py-2 text-right">
                     <a href="{% url 'admin_panel:position_update' position.pk %}" class="text-brand-purple hover:underline">Edit</a>
                     &middot;
+                    <a href="{% url 'admin_panel:contestant_list' %}?position={{ position.pk }}" class="text-brand-purple hover:underline">Contestants</a>
+                    &middot;
                     <a href="{% url 'admin_panel:position_delete' position.pk %}" class="text-brand-purple hover:underline">Delete</a>
                 </td>
             </tr>

@@ -27,6 +27,8 @@
                     <a href="{% url 'admin_panel:election_update' election.pk %}" class="text-brand-purple hover:underline">Edit</a>
                     &middot;
                     <a href="{% url 'admin_panel:election_results' election.pk %}" class="text-brand-purple hover:underline">Results</a>
+                    &middot;
+                    <a href="{% url 'admin_panel:contestant_list' %}?election={{ election.pk }}" class="text-brand-purple hover:underline">Contestants</a>
                     {% if election.status == "upcoming" %}
                         &middot;
                         <form method="post" action="{% url 'admin_panel:election_start' election.pk %}" class="inline" onsubmit="return confirm('Start voting for {{ election.session|escapejs }}?');">

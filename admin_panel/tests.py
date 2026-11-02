@@ -628,3 +628,65 @@ class AdminFormBackLinkTests(TestCase):
             response,
             f'href="{reverse("admin_panel:election_list")}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Elections',
         )
+
+
+class ContestantListFilterTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_contestant_filter", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+        self.election_a = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        self.election_b = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        self.position_a = Position.objects.create(title="President", modified_by=self.admin_profile)
+        self.position_b = Position.objects.create(title="Secretary", modified_by=self.admin_profile)
+        self.contestant_1 = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=self.position_a, election=self.election_a
+        )
+        self.contestant_2 = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me.", position=self.position_b, election=self.election_a
+        )
+        self.contestant_3 = Contestant.objects.create(
+            name="Amina Bello", manifesto="Vote for me.", position=self.position_a, election=self.election_b
+        )
+
+    def test_no_filter_returns_all_contestants(self):
+        response = self.client.get(reverse("admin_panel:contestant_list"))
+        self.assertEqual(len(response.context["contestants"]), 3)
+
+    def test_filter_by_election_returns_only_that_elections_contestants(self):
+        response = self.client.get(reverse("admin_panel:contestant_list"), {"election": self.election_a.pk})
+        contestants = set(response.context["contestants"])
+        self.assertEqual(contestants, {self.contestant_1, self.contestant_2})
+
+    def test_filter_by_position_returns_only_that_positions_contestants(self):
+        response = self.client.get(reverse("admin_panel:contestant_list"), {"position": self.position_a.pk})
+        contestants = set(response.context["contestants"])
+        self.assertEqual(contestants, {self.contestant_1, self.contestant_3})
+
+    def test_filter_by_both_election_and_position_returns_intersection(self):
+        response = self.client.get(
+            reverse("admin_panel:contestant_list"),
+            {"election": self.election_a.pk, "position": self.position_a.pk},
+        )
+        contestants = list(response.context["contestants"])
+        self.assertEqual(contestants, [self.contestant_1])
+
+    def test_election_list_links_to_filtered_contestants(self):
+        response = self.client.get(reverse("admin_panel:election_list"))
+        expected_url = reverse("admin_panel:contestant_list") + f"?election={self.election_a.pk}"
+        self.assertContains(response, f'href="{expected_url}"')
+
+    def test_position_list_links_to_filtered_contestants(self):
+        response = self.client.get(reverse("admin_panel:position_list"))
+        expected_url = reverse("admin_panel:contestant_list") + f"?position={self.position_a.pk}"
+        self.assertContains(response, f'href="{expected_url}"')

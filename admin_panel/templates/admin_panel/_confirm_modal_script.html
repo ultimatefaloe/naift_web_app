@@ -1,0 +1,30 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var modal = document.getElementById("confirm-modal");
+    if (!modal) {
+        return;
+    }
+    var messageEl = document.getElementById("confirm-modal-message");
+    var pendingFormId = null;
+
+    document.querySelectorAll("[data-confirm-form]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            pendingFormId = button.getAttribute("data-confirm-form");
+            messageEl.textContent = button.getAttribute("data-confirm-message");
+            modal.showModal();
+        });
+    });
+
+    modal.querySelector("[data-confirm-cancel]").addEventListener("click", function () {
+        pendingFormId = null;
+        modal.close();
+    });
+
+    modal.querySelector("[data-confirm-accept]").addEventListener("click", function () {
+        if (pendingFormId) {
+            document.getElementById(pendingFormId).submit();
+        }
+        modal.close();
+    });
+});
+</script>

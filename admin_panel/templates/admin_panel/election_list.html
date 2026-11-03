@@ -3,56 +3,98 @@
 {% block title %}Elections · NAIFT Admin{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-8">
-    <h1 class="font-display text-3xl text-brand-purple">Elections</h1>
-    <a href="{% url 'admin_panel:election_create' %}" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Add Election</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Elections</h1>
+        <p class="page-header__sub">Start, end, and publish election sessions.</p>
+    </div>
+    <a href="{% url 'admin_panel:election_create' %}" class="btn btn-primary">+ Add Election</a>
 </div>
 
-<table class="w-full text-left border-collapse">
-    <thead>
-        <tr class="border-b border-brand-black/10">
-            <th class="py-2">Session</th>
-            <th class="py-2">Status</th>
-            <th class="py-2">Results Published?</th>
-            <th class="py-2"></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for election in elections %}
-            <tr class="border-b border-brand-black/10">
-                <td class="py-2">{{ election.session }}</td>
-                <td class="py-2">{{ election.get_status_display }}</td>
-                <td class="py-2">{% if election.is_results_published %}Yes{% else %}No{% endif %}</td>
-                <td class="py-2 text-right">
-                    <a href="{% url 'admin_panel:election_update' election.pk %}" class="text-brand-purple hover:underline">Edit</a>
-                    &middot;
-                    <a href="{% url 'admin_panel:election_results' election.pk %}" class="text-brand-purple hover:underline">Results</a>
-                    &middot;
-                    <a href="{% url 'admin_panel:contestant_list' %}?election={{ election.pk }}" class="text-brand-purple hover:underline">Contestants</a>
-                    {% if election.status == "upcoming" %}
-                        &middot;
-                        <form method="post" action="{% url 'admin_panel:election_start' election.pk %}" class="inline" onsubmit="return confirm('Start voting for {{ election.session|escapejs }}?');">
-                            {% csrf_token %}
-                            <button type="submit" class="text-brand-purple hover:underline">Start Voting</button>
-                        </form>
-                    {% elif election.status == "ongoing" %}
-                        &middot;
-                        <form method="post" action="{% url 'admin_panel:election_end' election.pk %}" class="inline" onsubmit="return confirm('End voting for {{ election.session|escapejs }}?');">
-                            {% csrf_token %}
-                            <button type="submit" class="text-brand-purple hover:underline">End Voting</button>
-                        </form>
-                    {% elif election.status == "ended" and not election.is_results_published %}
-                        &middot;
-                        <form method="post" action="{% url 'admin_panel:election_publish_results' election.pk %}" class="inline" onsubmit="return confirm('Publish results for {{ election.session|escapejs }}? This makes them publicly visible.');">
-                            {% csrf_token %}
-                            <button type="submit" class="text-brand-purple hover:underline">Publish Result</button>
-                        </form>
+<dialog id="confirm-modal" class="rounded-lg border border-brand-purple/20 p-6 max-w-sm w-full">
+    <p id="confirm-modal-message" class="mb-6 text-brand-black"></p>
+    <div class="flex justify-end gap-3">
+        <button type="button" data-confirm-cancel class="text-brand-black/70 hover:underline">Cancel</button>
+        <button type="button" data-confirm-accept class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Confirm</button>
+    </div>
+</dialog>
+
+{% if elections %}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Session</th>
+                <th>Status</th>
+                <th>Results published</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for election in elections %}
+            <tr>
+                <td class="font-medium text-brand-black">{{ election.session }}</td>
+                <td>
+                    {% if election.status == "ongoing" %}
+                        <span class="badge badge-success">● Ongoing</span>
+                    {% elif election.status == "upcoming" %}
+                        <span class="badge badge-warning">Upcoming</span>
+                    {% else %}
+                        <span class="badge">Ended</span>
                     {% endif %}
                 </td>
+                <td>
+                    {% if election.is_results_published %}
+                        <span class="badge badge-brand">Published</span>
+                    {% else %}
+                        <span class="text-sm text-neutral-500">Not yet</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{% url 'admin_panel:election_update' election.pk %}">Edit</a>
+                        <a href="{% url 'admin_panel:election_results' election.pk %}">Results</a>
+                        <a href="{% url 'admin_panel:contestant_list' %}?election={{ election.pk }}">Contestants</a>
+
+                        {% if election.status == "upcoming" %}
+                            <form method="post" action="{% url 'admin_panel:election_start' election.pk %}"
+                                  id="election-start-{{ election.pk }}">
+                                {% csrf_token %}
+                            </form>
+                            <button type="button" class="btn btn-primary btn-sm"
+                                    data-confirm-form="election-start-{{ election.pk }}"
+                                    data-confirm-message="Start voting for {{ election.session|escapejs }}?">Start</button>
+                        {% elif election.status == "ongoing" %}
+                            <form method="post" action="{% url 'admin_panel:election_end' election.pk %}"
+                                  id="election-end-{{ election.pk }}">
+                                {% csrf_token %}
+                            </form>
+                            <button type="button" class="btn btn-danger btn-sm"
+                                    data-confirm-form="election-end-{{ election.pk }}"
+                                    data-confirm-message="End voting for {{ election.session|escapejs }}?">End</button>
+                        {% elif election.status == "ended" and not election.is_results_published %}
+                            <form method="post" action="{% url 'admin_panel:election_publish_results' election.pk %}"
+                                  id="election-publish-results-{{ election.pk }}">
+                                {% csrf_token %}
+                            </form>
+                            <button type="button" class="btn btn-primary btn-sm"
+                                    data-confirm-form="election-publish-results-{{ election.pk }}"
+                                    data-confirm-message="Publish results for {{ election.session|escapejs }}? This makes them publicly visible.">Publish</button>
+                        {% endif %}
+                    </div>
+                </td>
             </tr>
-        {% empty %}
-            <tr><td colspan="4" class="py-4">No elections yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="border border-neutral-200 bg-white p-10 text-center">
+    <p class="text-sm font-semibold uppercase tracking-wider text-brand-purple">No elections</p>
+    <p class="mt-2 text-lg text-neutral-700">Create your first election session to get started.</p>
+    <a href="{% url 'admin_panel:election_create' %}" class="btn btn-primary mt-4">+ Add Election</a>
+</div>
+{% endif %}
+
+{% include "admin_panel/_confirm_modal_script.html" %}
 {% endblock %}

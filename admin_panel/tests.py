@@ -817,3 +817,44 @@ class AdminNavTests(TestCase):
     def test_nav_includes_public_site_link(self):
         response = self.client.get(reverse("admin_panel:dashboard"))
         self.assertContains(response, f'href="{reverse("core:home")}" class="hover:text-brand-purple">Public Site')
+
+
+class ElectionActionModalTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_action_modal", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_start_voting_button_uses_modal_not_native_confirm(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="upcoming",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertNotContains(response, 'onsubmit="return confirm(')
+        self.assertContains(response, f'data-confirm-form="election-start-{election.pk}"')
+
+    def test_end_voting_button_uses_modal(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertContains(response, f'data-confirm-form="election-end-{election.pk}"')
+
+    def test_publish_result_button_uses_modal(self):
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ended",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertContains(response, f'data-confirm-form="election-publish-results-{election.pk}"')

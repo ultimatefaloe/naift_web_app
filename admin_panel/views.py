@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
@@ -51,7 +51,7 @@ class DashboardView(AdminRequiredMixin, TemplateView):
             tallies = (
                 Contestant.objects.filter(election=ongoing_election)
                 .select_related("position")
-                .annotate(vote_count=Count("votes"))
+                .annotate(vote_count=Count("votes", filter=Q(votes__election=F("election"))))
                 .order_by("position__title", "position_id", "-vote_count")
             )
             for contestant in tallies:
@@ -138,7 +138,7 @@ class ContestantCreateView(AdminRequiredMixin, CreateView):
 
 class ContestantUpdateView(AdminRequiredMixin, UpdateView):
     model = Contestant
-    fields = ["name", "alias", "manifesto", "position", "election", "photo"]
+    fields = ["name", "alias", "manifesto", "position", "photo"]
     template_name = "admin_panel/contestant_form.html"
     success_url = reverse_lazy("admin_panel:contestant_list")
 
@@ -215,7 +215,7 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
         context["tallies"] = mark_winners(
             Contestant.objects.filter(election=self.object)
             .select_related("position")
-            .annotate(vote_count=Count("votes"))
+            .annotate(vote_count=Count("votes", filter=Q(votes__election=F("election"))))
             .order_by("position__title", "position_id", "-vote_count")
         )
         return context

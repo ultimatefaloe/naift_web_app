@@ -148,6 +148,35 @@ class DashboardStatisticsTests(TestCase):
             response.context["current_executives"],
         )
 
+    def test_chart_tally_excludes_votes_from_a_different_election_even_if_contestant_was_reassigned(self):
+        old_election = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            status="ended",
+            modified_by=self.admin_profile,
+        )
+        ongoing_election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        contestant = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for me.", position=position, election=old_election
+        )
+        student = Student.objects.create(
+            first_name="A", last_name="One", matric_number="2026/1/00001CF", level="300"
+        )
+        Vote.objects.create(student=student, election=old_election, position=position, contestant=contestant)
+        contestant.election = ongoing_election
+        contestant.save()
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        chart_positions = response.context["chart_positions"]
+        self.assertEqual(chart_positions[0]["data"]["votes"], [0])
+
 
 class DashboardChartRenderingTests(TestCase):
     def setUp(self):
@@ -293,6 +322,48 @@ class ContestantCRUDTests(TestCase):
         response = self.client.post(reverse("admin_panel:contestant_delete", args=[contestant.pk]))
         self.assertRedirects(response, reverse("admin_panel:contestant_list"))
         self.assertFalse(Contestant.objects.filter(pk=contestant.pk).exists())
+
+    def test_update_does_not_change_election(self):
+        # `Contestant.photo` is a required ImageField with no `blank=True`. If
+        # the instance being updated has no photo already attached, Django's
+        # ClearableFileInput has no existing file to "keep" when none is
+        # resubmitted, so the update POST fails validation on photo alone —
+        # which would make this test fail for the wrong reason. Attaching a
+        # real photo at creation (same minimal-GIF fixture already used by
+        # `test_create_contestant`) lets the update below omit `photo` and
+        # still pass, so the test actually isolates the `election` field.
+        gif_1px = (
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04"
+            b"\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+        )
+        other_election = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        contestant = Contestant.objects.create(
+            name="John Smith",
+            alias="JS",
+            manifesto="Vote for stability.",
+            position=self.position,
+            election=self.election,
+            photo=SimpleUploadedFile("candidate.gif", gif_1px, content_type="image/gif"),
+        )
+        response = self.client.post(
+            reverse("admin_panel:contestant_update", args=[contestant.pk]),
+            {
+                "name": "John Smith",
+                "alias": "JS",
+                "manifesto": "Vote for stability, updated.",
+                "position": self.position.pk,
+                "election": other_election.pk,
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:contestant_list"))
+        contestant.refresh_from_db()
+        self.assertEqual(contestant.election, self.election)
+        self.assertEqual(contestant.manifesto, "Vote for stability, updated.")
 
 
 class ExecutiveCRUDTests(TestCase):
@@ -506,6 +577,25 @@ class ElectionResultsViewTests(TestCase):
     def test_results_view_hides_public_results_link_when_not_published(self):
         response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
         self.assertNotContains(response, "View Public Results")
+
+    def test_results_view_tally_excludes_votes_from_a_different_election_even_if_contestant_was_reassigned(self):
+        other_election = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        contestant = Contestant.objects.filter(election=self.election).get()
+        student = Student.objects.create(
+            first_name="John", last_name="Smith", matric_number="2022/1/90976CF", level="300"
+        )
+        Vote.objects.create(
+            student=student, election=self.election, position=self.position, contestant=contestant
+        )
+        contestant.election = other_election
+        contestant.save()
+        response = self.client.get(reverse("admin_panel:election_results", args=[other_election.pk]))
+        self.assertContains(response, "0 vote")
 
 
 class ElectionActionViewTests(TestCase):

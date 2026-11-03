@@ -1,7 +1,7 @@
 from functools import wraps
 
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, F, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -161,7 +161,7 @@ def results_view(request, pk=None):
     tallies = mark_winners(
         Contestant.objects.filter(election=election)
         .select_related("position")
-        .annotate(vote_count=Count("votes"))
+        .annotate(vote_count=Count("votes", filter=Q(votes__election=F("election"))))
         .order_by("position__title", "position_id", "-vote_count")
     )
     return render(request, "voting/results.html", {"election": election, "tallies": tallies})

@@ -476,6 +476,24 @@ class ResultsViewTests(TestCase):
         self.assertLess(winner_badge_index, amina_index)
         self.assertNotIn("Winner", content[content.index("Amina Bello"):])
 
+    def test_results_tally_excludes_votes_from_a_different_election_even_if_contestant_was_reassigned(self):
+        # Simulates a Contestant whose `election` was changed after votes were
+        # already cast under its original election — the tally must only
+        # count votes that belong to the contestant's CURRENT election, not
+        # every vote it has ever received.
+        other_election = Election.objects.create(
+            session="2025/2026",
+            start_time="2025-11-01T09:00:00Z",
+            close_time="2025-11-01T17:00:00Z",
+            status="ended",
+            is_results_published=True,
+            modified_by=self.admin_profile,
+        )
+        self.contestant.election = other_election
+        self.contestant.save()
+        response = self.client.get(reverse("voting:results_detail", args=[other_election.pk]))
+        self.assertContains(response, "0 vote")
+
     def test_results_no_login_required(self):
         response = self.client.get(reverse("voting:results"))
         self.assertEqual(response.status_code, 200)

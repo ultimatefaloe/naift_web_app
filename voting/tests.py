@@ -737,7 +737,7 @@ class SeedStudentsCommandTests(TestCase):
 class ImportStudentsTests(TestCase):
     def test_creates_new_student(self):
         result = import_students(
-            [(2, {"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"})]
+            [{"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"}]
         )
         self.assertEqual(result["created"], 1)
         self.assertEqual(result["updated"], 0)
@@ -747,7 +747,7 @@ class ImportStudentsTests(TestCase):
     def test_updates_existing_student_by_matric_number(self):
         Student.objects.create(first_name="Jane", last_name="Doe", matric_number="2026/1/00001CF", level="200")
         result = import_students(
-            [(2, {"first_name": "Janet", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"})]
+            [{"first_name": "Janet", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"}]
         )
         self.assertEqual(result["created"], 0)
         self.assertEqual(result["updated"], 1)
@@ -757,7 +757,7 @@ class ImportStudentsTests(TestCase):
 
     def test_skips_malformed_matric_number(self):
         result = import_students(
-            [(2, {"first_name": "Jane", "last_name": "Doe", "matric_number": "not-a-matric-number", "level": "300"})]
+            [{"first_name": "Jane", "last_name": "Doe", "matric_number": "not-a-matric-number", "level": "300"}]
         )
         self.assertEqual(result["created"], 0)
         self.assertEqual(len(result["skipped"]), 1)
@@ -765,7 +765,7 @@ class ImportStudentsTests(TestCase):
 
     def test_skips_row_with_missing_column(self):
         result = import_students(
-            [(2, {"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF"})]
+            [{"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF"}]
         )
         self.assertEqual(result["created"], 0)
         self.assertEqual(len(result["skipped"]), 1)

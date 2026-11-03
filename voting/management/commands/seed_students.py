@@ -20,7 +20,7 @@ class Command(BaseCommand):
         try:
             with open(csv_path, newline="", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                result = import_students(enumerate(reader, start=2))
+                result = import_students(reader)
         except FileNotFoundError:
             raise CommandError(f"CSV file not found: {csv_path}")
         for row_number, reason in result["skipped"]:

@@ -246,3 +246,45 @@ class MarkWinnersTests(TestCase):
             [t.position_id for t in tallies],
             [position_president.id, position_secretary.id, position_treasurer.id],
         )
+
+
+from .context_processors import election_status
+
+
+class ElectionStatusContextProcessorTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin_election_status", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+
+    def test_false_when_no_elections_exist(self):
+        self.assertFalse(election_status(None)["voting_is_open"])
+
+    def test_false_when_only_upcoming_election_exists(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="upcoming",
+            modified_by=self.admin_profile,
+        )
+        self.assertFalse(election_status(None)["voting_is_open"])
+
+    def test_false_when_only_ended_election_exists(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ended",
+            modified_by=self.admin_profile,
+        )
+        self.assertFalse(election_status(None)["voting_is_open"])
+
+    def test_true_when_ongoing_election_exists(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        self.assertTrue(election_status(None)["voting_is_open"])

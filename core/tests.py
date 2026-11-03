@@ -70,6 +70,53 @@ class HomeMarqueeTests(TestCase):
 
 
 class NavVoteLinkTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin_nav_vote_link", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+
     def test_home_vote_link_points_to_voting_login(self):
         response = self.client.get(reverse("core:home"))
         self.assertContains(response, reverse("voting:login"))
+
+
+class HomeVotingVisibilityTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user(username="admin_voting_visibility", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+
+    def test_vote_now_hero_button_hidden_when_no_ongoing_election(self):
+        response = self.client.get(reverse("core:home"))
+        self.assertNotContains(response, 'href="{}" class="btn btn-primary">Vote Now'.format(reverse("voting:login")))
+
+    def test_vote_now_hero_button_shown_when_election_is_ongoing(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, 'href="{}" class="btn btn-primary">Vote Now'.format(reverse("voting:login")))
+
+    def test_nav_vote_link_hidden_when_no_ongoing_election(self):
+        response = self.client.get(reverse("core:home"))
+        self.assertNotContains(response, "cta-bounce")
+
+    def test_nav_vote_link_shown_when_election_is_ongoing(self):
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=self.admin_profile,
+        )
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, "cta-bounce")

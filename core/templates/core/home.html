@@ -4,30 +4,101 @@
 {% block title %}Home · NAIFT{% endblock %}
 
 {% block content %}
+
+{# ── Election notice bar ── #}
 {% if latest_election %}
-    <div class="bg-brand-black text-brand-white px-6 py-3 text-center" data-aos="fade-down">
+<div class="border-b border-brand-purple/20 bg-brand-purple-soft" data-aos="fade-down">
+    <div class="page-container flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-3 text-sm text-brand-purple">
         {% if latest_election.status == "ongoing" %}
-            <p>Voting Ongoing for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}. <a href="{% url 'voting:login' %}" class="underline hover:text-brand-purple">Vote now</a></p>
+            <span class="badge badge-brand">Voting open</span>
+            <span class="font-medium">{{ latest_election.session }}</span>
+            <span class="text-brand-purple/70">· closes {{ latest_election.close_time }}</span>
+            <a href="{% url 'voting:login' %}" class="font-semibold underline underline-offset-4 hover:text-brand-purple-dark">
+                Vote now →
+            </a>
         {% else %}
-            <p>Election starts {{ latest_election.start_time }} for {{ latest_election.session }} &mdash; closes {{ latest_election.close_time }}.</p>
+            <span class="badge badge-warning">Upcoming</span>
+            <span class="font-medium">{{ latest_election.session }}</span>
+            <span class="text-brand-purple/70">
+                · opens {{ latest_election.start_time }} &middot; closes {{ latest_election.close_time }}
+            </span>
         {% endif %}
     </div>
+</div>
 {% endif %}
 
-<section class="relative overflow-hidden text-brand-white text-center" data-aos="zoom-in">
-    <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{% static 'image/hero-campus.jpg' %}');"></div>
-    <div class="absolute inset-0 bg-gradient-to-b from-brand-purple/70 via-brand-purple/60 to-brand-black/75"></div>
-    <div class="relative px-6 py-32">
-        <h1 class="font-display text-4xl md:text-6xl mb-4">Department of Information Technology</h1>
-        <p class="text-lg md:text-xl max-w-2xl mx-auto">School of Information and Communication Technology, Federal University of Technology, Minna</p>
+{# ── Hero ── #}
+<section class="relative isolate overflow-hidden bg-brand-black text-brand-white" data-aos="zoom-in">
+    <div class="absolute inset-0 bg-cover bg-center"
+         style="background-image: url('{% static 'image/hero-campus.jpg' %}');"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-brand-purple/80 via-brand-purple/50 to-brand-black/90"></div>
+
+    <div class="page-container relative py-28 sm:py-36">
+        <p class="mb-4 inline-block border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest backdrop-blur">
+            Student Elections
+        </p>
+        <h1 class="max-w-3xl font-display text-4xl font-semibold leading-tight md:text-6xl">
+            Department of Information Technology
+        </h1>
+        <p class="mt-4 max-w-2xl text-lg text-white/80 md:text-xl">
+            School of Information and Communication Technology<br class="hidden sm:block">
+            Federal University of Technology, Minna
+        </p>
+
+        <div class="mt-10 flex flex-wrap gap-3">
+            {% if voting_is_open %}
+            <a href="{% url 'voting:login' %}" class="btn btn-primary">Vote Now</a>
+            {% endif %}
+            <a href="{% url 'executives:current' %}"
+               class="inline-flex items-center gap-2 border border-white/40 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-brand-black">
+                Meet the Executive →
+            </a>
+        </div>
     </div>
 </section>
 
-<section class="px-6 py-16 max-w-4xl mx-auto" data-aos="fade-up">
-    <h2 class="font-display text-3xl text-brand-purple mb-4">Welcome</h2>
-    <p class="text-lg leading-relaxed">
-        This is the home of the Department of Information Technology's student election platform.
-        Learn about the department, meet the current executive, and take part in departmental elections.
-    </p>
+{# ── Welcome ── #}
+<section class="page-container py-16" data-aos="fade-up">
+    <div class="grid gap-10 lg:grid-cols-3">
+
+        <div class="lg:col-span-2">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Welcome</p>
+            <h2 class="mt-2 font-display text-3xl font-semibold text-brand-black">
+                The official student election platform
+            </h2>
+            <p class="mt-4 text-lg leading-relaxed text-neutral-700">
+                This is the home of the Department of Information Technology's student election platform.
+                Learn about the department, meet the current executive, and take part in departmental elections.
+            </p>
+
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="{% url 'core:about' %}" class="btn btn-outline">About the department</a>
+                <a href="{% url 'voting:results' %}" class="btn btn-ghost">View results →</a>
+            </div>
+        </div>
+
+        <aside class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            {% if voting_is_open %}
+            <a href="{% url 'voting:login' %}" class="card group block p-5 transition-shadow hover:shadow-hard">
+                <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Cast your vote</p>
+                <p class="mt-2 font-display text-lg font-semibold text-brand-black group-hover:text-brand-purple">
+                    Student login →
+                </p>
+            </a>
+            {% endif %}
+            <a href="{% url 'voting:results' %}" class="card group block p-5 transition-shadow hover:shadow-hard">
+                <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Results</p>
+                <p class="mt-2 font-display text-lg font-semibold text-brand-black group-hover:text-brand-purple">
+                    Live tally →
+                </p>
+            </a>
+            <a href="{% url 'executives:current' %}" class="card group block p-5 transition-shadow hover:shadow-hard">
+                <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Leadership</p>
+                <p class="mt-2 font-display text-lg font-semibold text-brand-black group-hover:text-brand-purple">
+                    Current executive →
+                </p>
+            </a>
+        </aside>
+    </div>
 </section>
 {% endblock %}

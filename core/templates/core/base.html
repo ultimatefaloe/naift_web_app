@@ -11,35 +11,142 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" integrity="sha512-1cK78a1o+ht2JcaW6g8OXYwqpev9+6GqOkz9xmBN9iUUhIndKtxwILGWYOSibOKjLsEdjyjZvYDq/cZwNeak0w==" crossorigin="anonymous" referrerpolicy="no-referrer">
     {% tailwind_css %}
 </head>
-<body class="bg-brand-white text-brand-black font-body">
-    <header class="flex items-center justify-between px-6 py-4 border-b border-brand-black/10">
-        <div class="flex items-center gap-3">
-            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-12 w-12 rounded-full object-cover logo-spin-hover">
-            <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-12 w-12 rounded-full object-cover logo-spin-hover">
-            <span class="font-display text-xl text-brand-purple">NAIFT</span>
+<body class="flex min-h-screen flex-col bg-brand-white text-brand-black font-body">
+
+    <header class="sticky top-0 z-50 border-b border-neutral-200 bg-brand-white/95 backdrop-blur">
+        <div class="page-container flex h-16 items-center justify-between gap-3">
+
+            <a href="{% url 'core:home' %}" class="flex min-w-0 shrink items-center gap-2 sm:gap-3">
+                <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology"
+                     class="logo-spin-hover h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover sm:h-10 sm:w-10">
+                <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna"
+                     class="logo-spin-hover h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover sm:h-10 sm:w-10">
+                <span class="truncate font-display text-base font-semibold text-brand-purple sm:text-lg">NAIFT</span>
+            </a>
+
+            {# ── Desktop nav ── #}
+            {% with current=request.resolver_match.url_name %}
+            <nav class="hidden items-center gap-1 text-sm md:flex">
+                <a href="{% url 'core:home' %}" class="nav-link"
+                   {% if current == 'home' %}aria-current="page"{% endif %}>Home</a>
+                <a href="{% url 'core:about' %}" class="nav-link"
+                   {% if current == 'about' %}aria-current="page"{% endif %}>About</a>
+                <a href="{% url 'core:academics' %}" class="nav-link"
+                   {% if current == 'academics' %}aria-current="page"{% endif %}>Academics</a>
+                <a href="{% url 'executives:current' %}" class="nav-link"
+                   {% if current == 'current' %}aria-current="page"{% endif %}>Executive</a>
+
+                {% if voting_is_open %}
+                <a href="{% url 'voting:login' %}"
+                   class="cta-bounce ml-2 inline-flex items-center gap-1.5 bg-brand-purple px-4 py-2
+                          text-sm font-semibold text-white transition-colors hover:bg-brand-purple-dark">
+                    Vote <span aria-hidden="true">→</span>
+                </a>
+                {% endif %}
+            </nav>
+            {% endwith %}
+
+            {# ── Mobile trigger ── #}
+            <button type="button"
+                    class="grid h-10 w-10 place-items-center border border-neutral-200 text-neutral-700 transition-colors hover:border-brand-purple hover:text-brand-purple md:hidden"
+                    data-menu-open aria-controls="mobile-nav" aria-expanded="false" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                    <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="square"/>
+                </svg>
+            </button>
         </div>
-        <nav class="flex items-center gap-6 font-body">
-            <a href="{% url 'core:home' %}" class="hover:text-brand-purple">Home</a>
-            <a href="{% url 'core:about' %}" class="hover:text-brand-purple">About</a>
-            <a href="{% url 'core:academics' %}" class="hover:text-brand-purple">Academics</a>
-            <a href="{% url 'executives:current' %}" class="hover:text-brand-purple">Executive</a>
-            <a href="{% url 'voting:login' %}" class="cta-bounce bg-brand-purple text-brand-white px-4 py-2 rounded-full hover:opacity-90">Vote</a>
-        </nav>
     </header>
 
-    <main>
+    {# ── Mobile drawer ── #}
+    <div id="mobile-nav"
+         class="pointer-events-none fixed inset-0 z-[60] md:hidden"
+         aria-hidden="true">
+        <div data-menu-overlay class="absolute inset-0 bg-brand-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-200"></div>
+
+        <aside data-menu-panel
+               class="absolute inset-y-0 right-0 flex w-80 max-w-[85vw] translate-x-full flex-col bg-brand-white shadow-hard-lg transition-transform duration-200 ease-[cubic-bezier(.2,0,0,1)]">
+
+            <header class="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+                <span class="font-display text-base font-semibold text-brand-black">NAIFT</span>
+                <button type="button"
+                        class="grid h-9 w-9 place-items-center text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-black"
+                        data-menu-close aria-label="Close menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" stroke-linecap="square"/>
+                    </svg>
+                </button>
+            </header>
+
+            {% with current=request.resolver_match.url_name %}
+            <nav class="flex-1 overflow-y-auto p-3">
+                <p class="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Navigate</p>
+                <ul class="space-y-1">
+                    <li>
+                        <a href="{% url 'core:home' %}"
+                           class="block px-3 py-3 text-sm font-medium
+                                  {% if current == 'home' %}bg-brand-purple-soft text-brand-purple{% else %}text-neutral-700 hover:bg-neutral-100{% endif %}">
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:about' %}"
+                           class="block px-3 py-3 text-sm font-medium
+                                  {% if current == 'about' %}bg-brand-purple-soft text-brand-purple{% else %}text-neutral-700 hover:bg-neutral-100{% endif %}">
+                            About
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:academics' %}"
+                           class="block px-3 py-3 text-sm font-medium
+                                  {% if current == 'academics' %}bg-brand-purple-soft text-brand-purple{% else %}text-neutral-700 hover:bg-neutral-100{% endif %}">
+                            Academics
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'executives:current' %}"
+                           class="block px-3 py-3 text-sm font-medium
+                                  {% if current == 'current' %}bg-brand-purple-soft text-brand-purple{% else %}text-neutral-700 hover:bg-neutral-100{% endif %}">
+                            Executive
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endwith %}
+
+            <footer class="border-t border-neutral-200 p-3">
+                {% if voting_is_open %}
+                <a href="{% url 'voting:login' %}" class="btn btn-primary btn-block">
+                    Vote Now <span aria-hidden="true">→</span>
+                </a>
+                {% endif %}
+            </footer>
+        </aside>
+    </div>
+
+    <main class="flex-1">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-brand-black text-brand-white px-6 py-8 mt-16">
-        <div class="flex items-center gap-3 mb-4">
-            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-10 w-10 rounded-full object-cover">
-            <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna logo" class="h-10 w-10 rounded-full object-cover">
+    <footer class="border-t border-neutral-200 bg-brand-black text-brand-white">
+        <div class="page-container py-10">
+            <div class="mb-6 flex items-center gap-3">
+                <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology"
+                     class="h-10 w-10 rounded-full border border-white/20 object-cover">
+                <img src="{% static 'image/fut.jpeg' %}" alt="Federal University of Technology Minna"
+                     class="h-10 w-10 rounded-full border border-white/20 object-cover">
+                <span class="font-display text-lg font-semibold">NAIFT</span>
+            </div>
+            <p class="max-w-2xl text-sm leading-relaxed text-white/70">
+                Department of Information Technology &middot;
+                School of Information and Communication Technology &middot;
+                Federal University of Technology, Minna
+            </p>
+            <p class="mt-4 text-xs text-white/40">© {% now "Y" %} NAIFT. All rights reserved.</p>
         </div>
-        <p class="text-sm text-brand-white/70">Department of Information Technology &middot; School of Information and Communication Technology &middot; Federal University of Technology, Minna</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js" integrity="sha512-A7AYk1fGKX6S2SsHywmPkrnzTZHrgiVT7GcQkLGDe2ev0aWb8zejytzS8wjo7PGEXKqJOrjQ4oORtnimIRZBtw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script>AOS.init();</script>
+    <script>AOS.init({ once: true, duration: 600 });</script>
+    {% include "core/_mobile_menu_script.html" %}
 </body>
 </html>

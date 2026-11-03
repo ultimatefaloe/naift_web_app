@@ -974,3 +974,38 @@ class StudentListFilterTests(TestCase):
         page1_pks = {s.pk for s in response_page1.context["students"]}
         page2_pks = {s.pk for s in response_page2.context["students"]}
         self.assertEqual(page1_pks & page2_pks, set())
+
+
+class StudentCSVUploadViewTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_student_csv", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_uploading_csv_creates_new_student(self):
+        csv_content = b"first_name,last_name,matric_number,level\nJane,Doe,2026/1/00001CF,300\n"
+        csv_file = SimpleUploadedFile("students.csv", csv_content, content_type="text/csv")
+        response = self.client.post(
+            reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
+        )
+        self.assertTrue(Student.objects.filter(matric_number="2026/1/00001CF").exists())
+        self.assertContains(response, "Imported 1 new student")
+
+    def test_uploading_csv_updates_existing_student(self):
+        Student.objects.create(first_name="Jane", last_name="Doe", matric_number="2026/1/00001CF", level="200")
+        csv_content = b"first_name,last_name,matric_number,level\nJanet,Doe,2026/1/00001CF,300\n"
+        csv_file = SimpleUploadedFile("students.csv", csv_content, content_type="text/csv")
+        response = self.client.post(
+            reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
+        )
+        student = Student.objects.get(matric_number="2026/1/00001CF")
+        self.assertEqual(student.first_name, "Janet")
+        self.assertContains(response, "updated 1 existing student")
+
+    def test_uploading_csv_with_malformed_row_reports_skip(self):
+        csv_content = b"first_name,last_name,matric_number,level\nJane,Doe,not-a-matric-number,300\n"
+        csv_file = SimpleUploadedFile("students.csv", csv_content, content_type="text/csv")
+        response = self.client.post(
+            reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
+        )
+        self.assertContains(response, "skipped 1 row")

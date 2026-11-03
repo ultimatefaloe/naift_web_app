@@ -1,3 +1,5 @@
+import csv
+
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
 from django.db.models import Count, F, ProtectedError, Q
@@ -9,6 +11,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from elections.models import Contestant, Election, Position
 from elections.results import mark_winners
 from executives.models import Executive
+from voting.csv_import import import_students
 from voting.models import Student
 from .forms import ElectionForm
 from .mixins import AdminRequiredMixin
@@ -230,6 +233,26 @@ class StudentDeleteView(AdminRequiredMixin, DeleteView):
             messages.error(self.request, f"{self.object} cannot be deleted because they have already voted.")
             return redirect("admin_panel:student_list")
         return redirect(self.get_success_url())
+
+
+class StudentCSVUploadView(AdminRequiredMixin, View):
+    def post(self, request):
+        csv_file = request.FILES.get("csv_file")
+        if not csv_file:
+            messages.error(request, "No CSV file was uploaded.")
+            return redirect("admin_panel:student_list")
+        decoded = csv_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded)
+        result = import_students(reader)
+        for row_number, reason in result["skipped"]:
+            messages.error(request, f"Row {row_number}: {reason} — skipped.")
+        messages.success(
+            request,
+            f"Imported {result['created']} new student(s), "
+            f"updated {result['updated']} existing student(s), "
+            f"skipped {len(result['skipped'])} row(s).",
+        )
+        return redirect("admin_panel:student_list")
 
 
 class ElectionListView(AdminRequiredMixin, ListView):

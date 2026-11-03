@@ -24,6 +24,7 @@ urlpatterns = [
     path("students/add/", views.StudentCreateView.as_view(), name="student_create"),
     path("students/<int:pk>/edit/", views.StudentUpdateView.as_view(), name="student_update"),
     path("students/<int:pk>/delete/", views.StudentDeleteView.as_view(), name="student_delete"),
+    path("students/upload-csv/", views.StudentCSVUploadView.as_view(), name="student_csv_upload"),
     path("elections/", views.ElectionListView.as_view(), name="election_list"),
     path("elections/add/", views.ElectionCreateView.as_view(), name="election_create"),
     path("elections/<int:pk>/edit/", views.ElectionUpdateView.as_view(), name="election_update"),

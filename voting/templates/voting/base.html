@@ -10,29 +10,146 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     {% tailwind_css %}
 </head>
-<body class="bg-brand-white text-brand-black font-body">
-    <header class="flex items-center justify-between px-6 py-4 border-b border-brand-black/10 flex-wrap gap-4">
-        <div class="flex items-center gap-3">
-            <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo" class="h-12 w-12 rounded-full object-cover">
-            <img src="{% static 'image/naifts_logo.jpeg' %}" alt="NAIFT logo" class="h-12 w-12 rounded-full object-cover">
-            <span class="font-display text-xl text-brand-purple">NAIFT Voting</span>
+<body class="flex min-h-screen flex-col bg-neutral-50 text-brand-black font-body">
+
+    <header class="sticky top-0 z-50 border-b border-neutral-200 bg-brand-white">
+        <div class="page-container flex h-16 items-center justify-between gap-3">
+
+            <a href="{% url 'voting:vote_entry' %}" class="flex min-w-0 shrink items-center gap-2 sm:gap-3">
+                <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology"
+                     class="h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover sm:h-10 sm:w-10">
+                <img src="{% static 'image/naifts_logo.jpeg' %}" alt="NAIFT"
+                     class="h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover sm:h-10 sm:w-10">
+                <span class="truncate font-display text-base font-semibold text-brand-purple sm:text-lg">
+                    NAIFT Voting
+                </span>
+            </a>
+
+            {# ── Desktop nav ── #}
+            {% with current=request.resolver_match.url_name %}
+            <nav class="hidden items-center gap-1 text-sm md:flex">
+                {% if voting_is_open %}
+                <a href="{% url 'voting:vote_entry' %}" class="nav-link"
+                   {% if current == 'vote_entry' or current == 'wizard_step' or current == 'wizard_review' or current == 'voted' or current == 'no_election' %}aria-current="page"{% endif %}>Vote</a>
+                {% endif %}
+                <a href="{% url 'voting:results' %}" class="nav-link"
+                   {% if current == 'results' or current == 'results_detail' %}aria-current="page"{% endif %}>Results</a>
+                <a href="{% url 'voting:results_archive' %}" class="nav-link"
+                   {% if current == 'results_archive' %}aria-current="page"{% endif %}>Past Results</a>
+                <a href="{% url 'core:home' %}" class="nav-link">Public Site</a>
+                {% if request.session.student_id %}
+                    <form method="post" action="{% url 'voting:logout' %}" class="ml-1">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-ghost btn-sm">Logout</button>
+                    </form>
+                {% endif %}
+            </nav>
+            {% endwith %}
+
+            {# ── Mobile trigger ── #}
+            <button type="button"
+                    class="grid h-10 w-10 place-items-center border border-neutral-200 text-neutral-700 transition-colors hover:border-brand-purple hover:text-brand-purple md:hidden"
+                    data-menu-open aria-controls="mobile-nav" aria-expanded="false" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                    <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="square"/>
+                </svg>
+            </button>
         </div>
-        <nav class="flex items-center gap-6 font-body flex-wrap">
-            <a href="{% url 'voting:vote_entry' %}" class="hover:text-brand-purple">Vote</a>
-            <a href="{% url 'voting:results' %}" class="hover:text-brand-purple">Results</a>
-            <a href="{% url 'voting:results_archive' %}" class="hover:text-brand-purple">Past Results</a>
-            <a href="{% url 'core:home' %}" class="hover:text-brand-purple">Public Site</a>
-            {% if request.session.student_id %}
-            <form method="post" action="{% url 'voting:logout' %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="hover:text-brand-purple">Logout</button>
-            </form>
-            {% endif %}
-        </nav>
     </header>
 
-    <main class="px-6 py-10 max-w-3xl mx-auto">
-        {% block content %}{% endblock %}
+    {# ── Mobile drawer ── #}
+    <div id="mobile-nav"
+         class="pointer-events-none fixed inset-0 z-[60] md:hidden"
+         aria-hidden="true">
+        <div data-menu-overlay class="absolute inset-0 bg-brand-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-200"></div>
+
+        <aside data-menu-panel
+               class="absolute inset-y-0 right-0 flex w-80 max-w-[85vw] translate-x-full flex-col bg-brand-white shadow-hard-lg transition-transform duration-200 ease-[cubic-bezier(.2,0,0,1)]">
+
+            <header class="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+                <span class="font-display text-base font-semibold text-brand-black">NAIFT Voting</span>
+                <button type="button"
+                        class="grid h-9 w-9 place-items-center text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-brand-black"
+                        data-menu-close aria-label="Close menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" stroke-linecap="square"/>
+                    </svg>
+                </button>
+            </header>
+
+            {% with current=request.resolver_match.url_name %}
+            <nav class="flex-1 overflow-y-auto p-3">
+                <p class="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Navigate</p>
+                <ul class="space-y-1">
+                    {% if voting_is_open %}
+                    <li>
+                        <a href="{% url 'voting:vote_entry' %}"
+                           class="flex items-center justify-between px-3 py-3 text-sm font-medium
+                                  {% if current == 'vote_entry' or current == 'wizard_step' or current == 'wizard_review' or current == 'voted' or current == 'no_election' %}
+                                      bg-brand-purple-soft text-brand-purple
+                                  {% else %}
+                                      text-neutral-700 hover:bg-neutral-100
+                                  {% endif %}">
+                            Vote <span aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <a href="{% url 'voting:results' %}"
+                           class="flex items-center justify-between px-3 py-3 text-sm font-medium
+                                  {% if current == 'results' or current == 'results_detail' %}
+                                      bg-brand-purple-soft text-brand-purple
+                                  {% else %}
+                                      text-neutral-700 hover:bg-neutral-100
+                                  {% endif %}">
+                            Results <span aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'voting:results_archive' %}"
+                           class="flex items-center justify-between px-3 py-3 text-sm font-medium
+                                  {% if current == 'results_archive' %}
+                                      bg-brand-purple-soft text-brand-purple
+                                  {% else %}
+                                      text-neutral-700 hover:bg-neutral-100
+                                  {% endif %}">
+                            Past Results <span aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:home' %}"
+                           class="flex items-center justify-between px-3 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-100">
+                            Public Site <span aria-hidden="true">↗</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endwith %}
+
+            {% if request.session.student_id %}
+            <footer class="border-t border-neutral-200 p-3">
+                <form method="post" action="{% url 'voting:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline btn-block">Logout</button>
+                </form>
+            </footer>
+            {% endif %}
+        </aside>
+    </div>
+
+    <main class="flex-1 py-10">
+        <div class="page-container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
+
+    <footer class="border-t border-neutral-200 bg-brand-white">
+        <div class="page-container flex flex-wrap items-center justify-between gap-2 py-4 text-xs text-neutral-500">
+            <span>© {% now "Y" %} NAIFT Voting</span>
+            <span>Department of Information Technology</span>
+        </div>
+    </footer>
+
+    {% include "voting/_mobile_menu_script.html" %}
 </body>
 </html>

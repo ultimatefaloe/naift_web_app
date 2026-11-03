@@ -496,6 +496,13 @@ class ResultsViewTests(TestCase):
         self.assertEqual(len(tallies), 1)
         self.assertEqual(tallies[0].vote_count, 0)
 
+    def test_results_not_published_shows_ongoing_message_when_election_is_open(self):
+        self.election.is_results_published = False
+        self.election.status = "ongoing"
+        self.election.save()
+        response = self.client.get(reverse("voting:results"))
+        self.assertContains(response, "An Election Is Currently Open")
+
     def test_results_no_login_required(self):
         response = self.client.get(reverse("voting:results"))
         self.assertEqual(response.status_code, 200)
@@ -708,9 +715,28 @@ class SeedStudentsCommandTests(TestCase):
 
 
 class VotingNavTests(TestCase):
-    def test_nav_includes_vote_link(self):
+    def test_nav_hides_vote_link_when_no_ongoing_election(self):
         response = self.client.get(reverse("voting:login"))
-        self.assertContains(response, reverse("voting:vote_entry"))
+        # The page header's logo also links to voting:vote_entry, so a bare
+        # href check would pass regardless of the nav link's visibility.
+        # Anchor the check to markup unique to the desktop nav link and to
+        # the mobile drawer entry.
+        self.assertNotContains(response, f'href="{reverse("voting:vote_entry")}" class="nav-link"')
+        self.assertNotContains(response, 'Vote <span aria-hidden="true">→</span>')
+
+    def test_nav_shows_vote_link_when_election_is_ongoing(self):
+        user = User.objects.create_user(username="admin_voting_nav_ongoing", password="pass12345")
+        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ongoing",
+            modified_by=admin_profile,
+        )
+        response = self.client.get(reverse("voting:login"))
+        self.assertContains(response, f'href="{reverse("voting:vote_entry")}" class="nav-link"')
+        self.assertContains(response, 'Vote <span aria-hidden="true">→</span>')
 
     def test_nav_includes_results_link(self):
         response = self.client.get(reverse("voting:login"))

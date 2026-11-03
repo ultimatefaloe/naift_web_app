@@ -3,8 +3,33 @@
 {% block title %}Results Not Published · NAIFT Voting{% endblock %}
 
 {% block content %}
-<div class="text-center mt-16">
-    <h1 class="font-display text-3xl text-brand-purple mb-4">Results Not Yet Published</h1>
-    <p class="text-lg">Check back once the election results have been published.</p>
+<div class="mx-auto py-16 text-center">
+
+    <div class="mx-auto mb-6 grid h-16 w-16 place-items-center bg-warning-soft text-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-8 w-8">
+            <rect x="5" y="11" width="14" height="10"/>
+            <path d="M8 11V7a4 4 0 018 0v4"/>
+        </svg>
+    </div>
+
+    {% if voting_is_open %}
+        <h1 class="mb-3 font-display text-3xl font-semibold text-brand-black">An Election Is Currently Open</h1>
+        <p class="text-base text-neutral-600">
+            Voting is in progress. Results will be available once the election ends and are published.
+        </p>
+        <div class="mt-8 flex justify-center gap-3">
+            <a href="{% url 'voting:login' %}" class="btn btn-primary">Vote Now</a>
+            <a href="{% url 'voting:results_archive' %}" class="btn btn-outline">Past Results</a>
+        </div>
+    {% else %}
+        <h1 class="mb-3 font-display text-3xl font-semibold text-brand-black">Results Not Yet Published</h1>
+        <p class="text-base text-neutral-600">
+            Check back once the election results have been published.
+        </p>
+        <div class="mt-8 flex justify-center gap-3">
+            <a href="{% url 'voting:results_archive' %}" class="btn btn-outline">Past Results</a>
+            <a href="{% url 'core:home' %}" class="btn btn-primary">Public Site</a>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

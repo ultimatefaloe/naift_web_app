@@ -1,0 +1,41 @@
+<script>
+(() => {
+  const menu = document.getElementById('mobile-nav');
+  if (!menu) return;
+
+  const panel   = menu.querySelector('[data-menu-panel]');
+  const overlay = menu.querySelector('[data-menu-overlay]');
+  const openers = document.querySelectorAll('[data-menu-open]');
+  const closers = menu.querySelectorAll('[data-menu-close], [data-menu-overlay]');
+
+  const open = () => {
+    menu.classList.remove('pointer-events-none');
+    menu.setAttribute('aria-hidden', 'false');
+    overlay.classList.remove('opacity-0');
+    panel.classList.remove('translate-x-full');
+    document.body.classList.add('overflow-hidden');
+    openers.forEach((btn) => btn.setAttribute('aria-expanded', 'true'));
+  };
+
+  const close = () => {
+    panel.classList.add('translate-x-full');
+    overlay.classList.add('opacity-0');
+    menu.setAttribute('aria-hidden', 'true');
+    menu.classList.add('pointer-events-none');
+    document.body.classList.remove('overflow-hidden');
+    openers.forEach((btn) => btn.setAttribute('aria-expanded', 'false'));
+  };
+
+  openers.forEach((btn) => btn.addEventListener('click', open));
+  closers.forEach((el) => el.addEventListener('click', (e) => { e.preventDefault(); close(); }));
+  menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', close));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.getAttribute('aria-hidden') === 'false') close();
+  });
+
+  window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
+    if (e.matches && menu.getAttribute('aria-hidden') === 'false') close();
+  });
+})();
+</script>

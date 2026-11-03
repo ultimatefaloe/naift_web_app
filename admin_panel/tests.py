@@ -1009,3 +1009,31 @@ class StudentCSVUploadViewTests(TestCase):
             reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
         )
         self.assertContains(response, "skipped 1 row")
+
+    def test_uploading_csv_with_utf8_bom_still_works(self):
+        csv_content = "first_name,last_name,matric_number,level\nJane,Doe,2026/1/00001CF,300\n".encode("utf-8-sig")
+        csv_file = SimpleUploadedFile("students.csv", csv_content, content_type="text/csv")
+        response = self.client.post(
+            reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
+        )
+        self.assertTrue(Student.objects.filter(matric_number="2026/1/00001CF").exists())
+        self.assertContains(response, "Imported 1 new student")
+
+    def test_uploading_csv_with_cp1252_encoding_still_works(self):
+        csv_content = "first_name,last_name,matric_number,level\nJane,O’Brien,2026/1/00001CF,300\n".encode("cp1252")
+        csv_file = SimpleUploadedFile("students.csv", csv_content, content_type="text/csv")
+        response = self.client.post(
+            reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
+        )
+        student = Student.objects.get(matric_number="2026/1/00001CF")
+        self.assertEqual(student.last_name, "O’Brien")
+
+    def test_uploading_unreadable_binary_file_shows_friendly_error_instead_of_crashing(self):
+        csv_file = SimpleUploadedFile(
+            "students.csv", b"\x50\x4b\x03\x04\x80\x81", content_type="application/octet-stream"
+        )
+        response = self.client.post(
+            reverse("admin_panel:student_csv_upload"), {"csv_file": csv_file}, follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Could not read this file as text")

@@ -241,8 +241,20 @@ class StudentCSVUploadView(AdminRequiredMixin, View):
         if not csv_file:
             messages.error(request, "No CSV file was uploaded.")
             return redirect("admin_panel:student_list")
-        decoded = csv_file.read().decode("utf-8").splitlines()
-        reader = csv.DictReader(decoded)
+        raw = csv_file.read()
+        try:
+            decoded = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            try:
+                decoded = raw.decode("cp1252")
+            except UnicodeDecodeError:
+                messages.error(
+                    request,
+                    "Could not read this file as text. Please export it as CSV "
+                    "(UTF-8 or Windows/CSV) and try again.",
+                )
+                return redirect("admin_panel:student_list")
+        reader = csv.DictReader(decoded.splitlines())
         result = import_students(reader)
         for row_number, reason in result["skipped"]:
             messages.error(request, f"Row {row_number}: {reason} — skipped.")

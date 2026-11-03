@@ -12,6 +12,7 @@ from django.urls import reverse
 from admin_panel.models import AdminProfile
 from elections.models import Contestant, Election, Position
 
+from .csv_import import import_students
 from .models import Student, Vote
 
 
@@ -712,6 +713,62 @@ class SeedStudentsCommandTests(TestCase):
             self.assertIn("Row 2", err.getvalue())
         finally:
             os.unlink(csv_path)
+
+    def test_rerunning_with_changed_data_updates_existing_student(self):
+        csv_content = "first_name,last_name,matric_number,level\nJane,Doe,2022/1/90976CF,300\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write(csv_content)
+            csv_path = f.name
+        try:
+            call_command("seed_students", csv_path, stdout=StringIO())
+            updated_csv_content = "first_name,last_name,matric_number,level\nJanet,Doe,2022/1/90976CF,400\n"
+            with open(csv_path, "w") as f:
+                f.write(updated_csv_content)
+            out = StringIO()
+            call_command("seed_students", csv_path, stdout=out)
+            student = Student.objects.get(matric_number="2022/1/90976CF")
+            self.assertEqual(student.first_name, "Janet")
+            self.assertEqual(student.level, "400")
+            self.assertIn("updated 1 existing student", out.getvalue())
+        finally:
+            os.unlink(csv_path)
+
+
+class ImportStudentsTests(TestCase):
+    def test_creates_new_student(self):
+        result = import_students(
+            [(2, {"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"})]
+        )
+        self.assertEqual(result["created"], 1)
+        self.assertEqual(result["updated"], 0)
+        self.assertEqual(result["skipped"], [])
+        self.assertTrue(Student.objects.filter(matric_number="2026/1/00001CF", first_name="Jane").exists())
+
+    def test_updates_existing_student_by_matric_number(self):
+        Student.objects.create(first_name="Jane", last_name="Doe", matric_number="2026/1/00001CF", level="200")
+        result = import_students(
+            [(2, {"first_name": "Janet", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"})]
+        )
+        self.assertEqual(result["created"], 0)
+        self.assertEqual(result["updated"], 1)
+        student = Student.objects.get(matric_number="2026/1/00001CF")
+        self.assertEqual(student.first_name, "Janet")
+        self.assertEqual(student.level, "300")
+
+    def test_skips_malformed_matric_number(self):
+        result = import_students(
+            [(2, {"first_name": "Jane", "last_name": "Doe", "matric_number": "not-a-matric-number", "level": "300"})]
+        )
+        self.assertEqual(result["created"], 0)
+        self.assertEqual(len(result["skipped"]), 1)
+        self.assertEqual(result["skipped"][0][0], 2)
+
+    def test_skips_row_with_missing_column(self):
+        result = import_students(
+            [(2, {"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF"})]
+        )
+        self.assertEqual(result["created"], 0)
+        self.assertEqual(len(result["skipped"]), 1)
 
 
 class VotingNavTests(TestCase):

@@ -595,7 +595,9 @@ class ElectionResultsViewTests(TestCase):
         contestant.election = other_election
         contestant.save()
         response = self.client.get(reverse("admin_panel:election_results", args=[other_election.pk]))
-        self.assertContains(response, "0 vote")
+        tallies = list(response.context["tallies"])
+        self.assertEqual(len(tallies), 1)
+        self.assertEqual(tallies[0].vote_count, 0)
 
 
 class ElectionActionViewTests(TestCase):

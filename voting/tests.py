@@ -492,7 +492,9 @@ class ResultsViewTests(TestCase):
         self.contestant.election = other_election
         self.contestant.save()
         response = self.client.get(reverse("voting:results_detail", args=[other_election.pk]))
-        self.assertContains(response, "0 vote")
+        tallies = list(response.context["tallies"])
+        self.assertEqual(len(tallies), 1)
+        self.assertEqual(tallies[0].vote_count, 0)
 
     def test_results_no_login_required(self):
         response = self.client.get(reverse("voting:results"))

@@ -818,6 +818,15 @@ class AdminNavTests(TestCase):
         response = self.client.get(reverse("admin_panel:dashboard"))
         self.assertContains(response, f'href="{reverse("core:home")}" class="hover:text-brand-purple">Public Site')
 
+    def test_nav_includes_students_link(self):
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(
+            response,
+            f'<a href="{reverse("admin_panel:student_list")}"\n'
+            '                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white',
+        )
+        self.assertContains(response, ">Students</a>")
+
 
 class ElectionActionModalTests(TestCase):
     def setUp(self):
@@ -858,3 +867,110 @@ class ElectionActionModalTests(TestCase):
         )
         response = self.client.get(reverse("admin_panel:election_list"))
         self.assertContains(response, f'data-confirm-form="election-publish-results-{election.pk}"')
+
+
+class StudentCRUDTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_student_crud", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+
+    def test_list_view_returns_200(self):
+        response = self.client.get(reverse("admin_panel:student_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/student_list.html")
+
+    def test_create_student(self):
+        response = self.client.post(
+            reverse("admin_panel:student_create"),
+            {"first_name": "Jane", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"},
+        )
+        self.assertRedirects(response, reverse("admin_panel:student_list"))
+        self.assertTrue(Student.objects.filter(matric_number="2026/1/00001CF").exists())
+
+    def test_update_student(self):
+        student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2026/1/00001CF", level="200"
+        )
+        response = self.client.post(
+            reverse("admin_panel:student_update", args=[student.pk]),
+            {"first_name": "Janet", "last_name": "Doe", "matric_number": "2026/1/00001CF", "level": "300"},
+        )
+        self.assertRedirects(response, reverse("admin_panel:student_list"))
+        student.refresh_from_db()
+        self.assertEqual(student.first_name, "Janet")
+        self.assertEqual(student.level, "300")
+
+    def test_delete_student_with_no_votes(self):
+        student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2026/1/00001CF", level="300"
+        )
+        response = self.client.post(reverse("admin_panel:student_delete", args=[student.pk]))
+        self.assertRedirects(response, reverse("admin_panel:student_list"))
+        self.assertFalse(Student.objects.filter(pk=student.pk).exists())
+
+    def test_delete_protected_student_shows_friendly_error_instead_of_crashing(self):
+        student = Student.objects.create(
+            first_name="Jane", last_name="Doe", matric_number="2026/1/00001CF", level="300"
+        )
+        election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            modified_by=self.admin_profile,
+        )
+        position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        contestant = Contestant.objects.create(
+            name="John Roe", manifesto="Vote for me.", position=position, election=election
+        )
+        Vote.objects.create(student=student, election=election, position=position, contestant=contestant)
+        response = self.client.post(reverse("admin_panel:student_delete", args=[student.pk]), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Student.objects.filter(pk=student.pk).exists())
+        self.assertContains(response, "cannot be deleted")
+
+
+class StudentListFilterTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_student_filter", password="pass12345")
+        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+        Student.objects.create(first_name="Amina", last_name="Bello", matric_number="2026/1/00001CF", level="300")
+        Student.objects.create(first_name="John", last_name="Roe", matric_number="2026/1/00002CF", level="200")
+        Student.objects.create(first_name="Zainab", last_name="Yusuf", matric_number="2026/1/00003CF", level="300")
+
+    def test_no_filter_returns_all_students(self):
+        response = self.client.get(reverse("admin_panel:student_list"))
+        self.assertEqual(len(response.context["students"]), 3)
+
+    def test_filter_by_matric_number(self):
+        response = self.client.get(reverse("admin_panel:student_list"), {"matric_number": "00002"})
+        students = list(response.context["students"])
+        self.assertEqual(len(students), 1)
+        self.assertEqual(students[0].matric_number, "2026/1/00002CF")
+
+    def test_filter_by_level(self):
+        response = self.client.get(reverse("admin_panel:student_list"), {"level": "300"})
+        students = list(response.context["students"])
+        self.assertEqual(len(students), 2)
+
+    def test_sort_descending_reverses_alphabetical_order(self):
+        response = self.client.get(reverse("admin_panel:student_list"), {"sort": "desc"})
+        students = list(response.context["students"])
+        self.assertEqual([s.last_name for s in students], ["Yusuf", "Roe", "Bello"])
+
+    def test_pagination_splits_results_across_pages(self):
+        for i in range(30):
+            Student.objects.create(
+                first_name=f"Student{i}",
+                last_name=f"Surname{i:03d}",
+                matric_number=f"2026/2/{i:05d}CF",
+                level="100",
+            )
+        response_page1 = self.client.get(reverse("admin_panel:student_list"))
+        response_page2 = self.client.get(reverse("admin_panel:student_list"), {"page": 2})
+        self.assertEqual(len(response_page1.context["students"]), 25)
+        self.assertTrue(len(response_page2.context["students"]) > 0)
+        page1_pks = {s.pk for s in response_page1.context["students"]}
+        page2_pks = {s.pk for s in response_page2.context["students"]}
+        self.assertEqual(page1_pks & page2_pks, set())

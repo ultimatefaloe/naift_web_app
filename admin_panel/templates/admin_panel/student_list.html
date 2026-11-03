@@ -1,0 +1,95 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Students · NAIFT Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Students</h1>
+        <p class="page-header__sub">Students eligible to vote.</p>
+    </div>
+    <a href="{% url 'admin_panel:student_create' %}" class="btn btn-primary">+ Add Student</a>
+</div>
+
+<form method="get" class="mb-6 flex flex-wrap items-end gap-4 border border-neutral-200 bg-white p-4">
+    <div class="form-field">
+        <label class="form-label" for="id_matric_number">Matric number</label>
+        <input type="text" name="matric_number" id="id_matric_number"
+               value="{{ current_matric_number }}"
+               placeholder="e.g. 2026/1/00001CF"
+               class="form-input">
+    </div>
+    <div class="form-field">
+        <label class="form-label" for="id_level">Level</label>
+        <select name="level" id="id_level" class="form-select">
+            <option value="">All levels</option>
+            {% for value, label in level_choices %}
+                <option value="{{ value }}" {% if current_level == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <input type="hidden" name="sort" value="{{ current_sort }}">
+    <div class="flex items-center gap-3">
+        <button type="submit" class="btn btn-outline">Filter</button>
+        <a href="{% url 'admin_panel:student_list' %}" class="btn btn-ghost">Clear</a>
+    </div>
+</form>
+
+{% if students %}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    <a href="?matric_number={{ current_matric_number|urlencode }}&level={{ current_level|urlencode }}&sort={% if current_sort == 'desc' %}asc{% else %}desc{% endif %}"
+                       class="inline-flex items-center gap-1 hover:text-brand-purple">
+                        Name
+                        {% if current_sort == 'desc' %}↓{% else %}↑{% endif %}
+                    </a>
+                </th>
+                <th>Matric number</th>
+                <th>Level</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td class="font-medium text-brand-black">{{ student.last_name }}, {{ student.first_name }}</td>
+                <td class="text-neutral-600">{{ student.matric_number }}</td>
+                <td class="text-neutral-600">{{ student.get_level_display }}</td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{% url 'admin_panel:student_update' student.pk %}">Edit</a>
+                        <a href="{% url 'admin_panel:student_delete' student.pk %}" class="danger">Delete</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+        {% if page_obj.has_previous %}
+            <a href="?matric_number={{ current_matric_number|urlencode }}&level={{ current_level|urlencode }}&sort={{ current_sort }}&page={{ page_obj.previous_page_number }}"
+               class="btn btn-outline btn-sm">← Previous</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+            <a href="?matric_number={{ current_matric_number|urlencode }}&level={{ current_level|urlencode }}&sort={{ current_sort }}&page={{ page_obj.next_page_number }}"
+               class="btn btn-outline btn-sm">Next →</a>
+        {% endif %}
+    </div>
+    <p class="text-sm text-neutral-600">Page {{ page_obj.number }} of {{ paginator.num_pages }}</p>
+</div>
+{% endif %}
+
+{% else %}
+<div class="border border-neutral-200 bg-white p-10 text-center">
+    <p class="text-lg text-neutral-700">No students yet.</p>
+    <a href="{% url 'admin_panel:student_create' %}" class="btn btn-primary mt-4">+ Add Student</a>
+</div>
+{% endif %}
+{% endblock %}

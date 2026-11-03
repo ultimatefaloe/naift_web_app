@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, ProtectedError, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from elections.models import Contestant, Election, Position
 from elections.results import mark_winners
 from executives.models import Executive
+from voting.models import Student
 from .forms import ElectionForm
 from .mixins import AdminRequiredMixin
 
@@ -173,6 +174,62 @@ class ExecutiveDeleteView(AdminRequiredMixin, DeleteView):
     model = Executive
     template_name = "admin_panel/executive_confirm_delete.html"
     success_url = reverse_lazy("admin_panel:executive_list")
+
+
+class StudentListView(AdminRequiredMixin, ListView):
+    model = Student
+    template_name = "admin_panel/student_list.html"
+    context_object_name = "students"
+    paginate_by = 25
+
+    def get_queryset(self):
+        queryset = Student.objects.all()
+        matric_number = self.request.GET.get("matric_number")
+        level = self.request.GET.get("level")
+        sort = self.request.GET.get("sort", "asc")
+        if matric_number:
+            queryset = queryset.filter(matric_number__icontains=matric_number)
+        if level:
+            queryset = queryset.filter(level=level)
+        order = ["last_name", "first_name"] if sort != "desc" else ["-last_name", "-first_name"]
+        return queryset.order_by(*order)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["level_choices"] = Student.LEVEL_CHOICES
+        context["current_matric_number"] = self.request.GET.get("matric_number", "")
+        context["current_level"] = self.request.GET.get("level", "")
+        context["current_sort"] = self.request.GET.get("sort", "asc")
+        return context
+
+
+class StudentCreateView(AdminRequiredMixin, CreateView):
+    model = Student
+    fields = ["first_name", "last_name", "matric_number", "level"]
+    template_name = "admin_panel/student_form.html"
+    success_url = reverse_lazy("admin_panel:student_list")
+
+
+class StudentUpdateView(AdminRequiredMixin, UpdateView):
+    model = Student
+    fields = ["first_name", "last_name", "matric_number", "level"]
+    template_name = "admin_panel/student_form.html"
+    success_url = reverse_lazy("admin_panel:student_list")
+
+
+class StudentDeleteView(AdminRequiredMixin, DeleteView):
+    model = Student
+    template_name = "admin_panel/student_confirm_delete.html"
+    success_url = reverse_lazy("admin_panel:student_list")
+
+    def form_valid(self, form):
+        self.object = self.get_object()
+        try:
+            self.object.delete()
+        except ProtectedError:
+            messages.error(self.request, f"{self.object} cannot be deleted because they have already voted.")
+            return redirect("admin_panel:student_list")
+        return redirect(self.get_success_url())
 
 
 class ElectionListView(AdminRequiredMixin, ListView):

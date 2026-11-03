@@ -10,32 +10,202 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     {% tailwind_css %}
 </head>
-<body class="bg-brand-white text-brand-black font-body">
+<body class="flex min-h-screen flex-col bg-neutral-50 text-brand-black font-body">
+
     {% if user.is_authenticated %}
-    <header class="flex items-center justify-between px-6 py-4 bg-brand-black text-brand-white">
-        <span class="font-display text-xl">NAIFT Admin</span>
-        <nav class="flex items-center gap-6 font-body">
-            <a href="{% url 'admin_panel:dashboard' %}" class="hover:text-brand-purple">Dashboard</a>
-            <a href="{% url 'admin_panel:position_list' %}" class="hover:text-brand-purple">Positions</a>
-            <a href="{% url 'admin_panel:contestant_list' %}" class="hover:text-brand-purple">Contestants</a>
-            <a href="{% url 'admin_panel:executive_list' %}" class="hover:text-brand-purple">Executives</a>
-            <a href="{% url 'admin_panel:election_list' %}" class="hover:text-brand-purple">Elections</a>
-            <a href="{% url 'core:home' %}" class="hover:text-brand-purple">Public Site</a>
-            <form method="post" action="{% url 'admin_panel:logout' %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="hover:text-brand-purple">Logout</button>
-            </form>
-        </nav>
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-brand-black text-brand-white">
+        <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+
+            <a href="{% url 'admin_panel:dashboard' %}" class="flex min-w-0 shrink items-center gap-2">
+                <span class="grid h-8 w-8 shrink-0 place-items-center bg-brand-purple text-xs font-bold">N</span>
+                <span class="truncate font-display text-base font-semibold sm:text-lg">NAIFT Admin</span>
+            </a>
+
+            {# ── Desktop nav ── #}
+            {% with current=request.resolver_match.url_name %}
+            <nav class="hidden items-center gap-1 text-sm md:flex">
+                <a href="{% url 'admin_panel:dashboard' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if current == 'dashboard' %}text-white{% endif %}">Dashboard</a>
+                <a href="{% url 'admin_panel:position_list' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if 'position' in current %}text-white{% endif %}">Positions</a>
+                <a href="{% url 'admin_panel:contestant_list' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if 'contestant' in current %}text-white{% endif %}">Contestants</a>
+                <a href="{% url 'admin_panel:student_list' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if 'student' in current %}text-white{% endif %}">Students</a>
+                <a href="{% url 'admin_panel:executive_list' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if 'executive' in current %}text-white{% endif %}">Executives</a>
+                <a href="{% url 'admin_panel:election_list' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if 'election' in current %}text-white{% endif %}">Elections</a>
+            </nav>
+            {% endwith %}
+
+            <div class="flex shrink-0 items-center gap-2">
+                <a href="{% url 'core:home' %}"
+                   class="hidden text-sm text-white/70 hover:text-white sm:inline">Public site ↗</a>
+                <form method="post" action="{% url 'admin_panel:logout' %}" class="hidden md:block">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-white/50 hover:bg-white/10">
+                        Logout
+                    </button>
+                </form>
+
+                <button type="button"
+                        class="grid h-10 w-10 place-items-center border border-white/20 text-white transition-colors hover:border-white/50 hover:bg-white/10 md:hidden"
+                        data-menu-open aria-controls="mobile-nav" aria-expanded="false" aria-label="Open menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="square"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </header>
+
+    {# ── Mobile drawer (dark) ── #}
+    <div id="mobile-nav"
+         class="pointer-events-none fixed inset-0 z-[60] md:hidden"
+         aria-hidden="true">
+        <div data-menu-overlay class="absolute inset-0 bg-black/70 opacity-0 backdrop-blur-sm transition-opacity duration-200"></div>
+
+        <aside data-menu-panel
+               class="absolute inset-y-0 right-0 flex w-80 max-w-[85vw] translate-x-full flex-col bg-brand-black text-white shadow-hard-lg transition-transform duration-200 ease-[cubic-bezier(.2,0,0,1)]">
+
+            <header class="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                <div class="flex items-center gap-2">
+                    <span class="grid h-8 w-8 place-items-center bg-brand-purple text-xs font-bold">N</span>
+                    <span class="font-display text-base font-semibold">NAIFT Admin</span>
+                </div>
+                <button type="button"
+                        class="grid h-9 w-9 place-items-center text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                        data-menu-close aria-label="Close menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" stroke-linecap="square"/>
+                    </svg>
+                </button>
+            </header>
+
+            {% with current=request.resolver_match.url_name %}
+            <nav class="flex-1 overflow-y-auto p-3">
+                <p class="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Manage</p>
+                <ul class="space-y-1 text-sm">
+                    <li>
+                        <a href="{% url 'admin_panel:dashboard' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if current == 'dashboard' %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_panel:position_list' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if 'position' in current %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Positions
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_panel:contestant_list' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if 'contestant' in current %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Contestants
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_panel:student_list' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if 'student' in current %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Students
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_panel:executive_list' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if 'executive' in current %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Executives
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_panel:election_list' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if 'election' in current %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Elections
+                        </a>
+                    </li>
+                </ul>
+
+                <p class="mt-6 px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Site</p>
+                <ul class="space-y-1 text-sm">
+                    <li>
+                        <a href="{% url 'core:home' %}"
+                           class="flex items-center justify-between px-3 py-3 font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white">
+                            Public site <span aria-hidden="true">↗</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endwith %}
+
+            <footer class="border-t border-white/10 p-3">
+                <form method="post" action="{% url 'admin_panel:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="block w-full border border-white/20 px-4 py-3 text-sm font-semibold text-white transition-colors hover:border-white/50 hover:bg-white/10">
+                        Logout
+                    </button>
+                </form>
+            </footer>
+        </aside>
+    </div>
     {% endif %}
 
-    <main class="px-6 py-10 max-w-5xl mx-auto">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-6 px-4 py-3 rounded bg-brand-purple/10 text-brand-purple">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        {% block content %}{% endblock %}
+    <main class="flex-1 py-8">
+        <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for message in messages %}
+                        <div class="alert
+                            {% if message.tags == 'error' %}alert-error
+                            {% elif message.tags == 'warning' %}alert-warning
+                            {% elif message.tags == 'success' %}alert-success
+                            {% else %}alert-info{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
     </main>
+
+    {% if user.is_authenticated %}{% include "admin_panel/_mobile_menu_script.html" %}{% endif %}
 </body>
 </html>

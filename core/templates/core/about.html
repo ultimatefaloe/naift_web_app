@@ -4,42 +4,83 @@
 {% block title %}About · NAIFT{% endblock %}
 
 {% block content %}
-<section class="px-6 py-16 max-w-4xl mx-auto" data-aos="fade-up">
-    <h1 class="font-display text-4xl text-brand-purple mb-8">About</h1>
 
-    <img src="{% static 'image/about-classroom.jpg' %}" alt="Students studying together on campus" class="w-full h-64 md:h-80 object-cover rounded-lg shadow-lg mb-8" data-aos="zoom-in">
-
-    <h2 class="font-display text-2xl text-brand-black mb-3">School of Information and Communication Technology (SICT)</h2>
-    <p class="text-lg leading-relaxed mb-6">
-        The School of Information and Communication Technology (SICT) was created in the 2009/2010 academic
-        session. The pioneer departments were Computer Science, Cyber Security Science, Information and
-        Media Technology, and Library and Information Technology. SICT received the National Universities
-        Commission's Pre-Accreditation Resource Verification Visit in 2010, which saw all its departments
-        accredited. Since its inception, the School has graduated over 1,000 undergraduates and 500
-        postgraduates.
-    </p>
-
-    <div class="grid md:grid-cols-3 gap-6 mb-10">
-        <div class="border border-brand-purple/20 rounded-lg p-5">
-            <h3 class="font-display text-xl text-brand-purple mb-2">Philosophy</h3>
-            <p>To encourage the advancement of learning and the acquisition of higher education in Technology.</p>
-        </div>
-        <div class="border border-brand-purple/20 rounded-lg p-5">
-            <h3 class="font-display text-xl text-brand-purple mb-2">Vision</h3>
-            <p>To be the world-class centre of Excellence in training and research in Information and Communication Technology in Nigeria.</p>
-        </div>
-        <div class="border border-brand-purple/20 rounded-lg p-5">
-            <h3 class="font-display text-xl text-brand-purple mb-2">Mission</h3>
-            <p>To build excellent research capacity and develop high-quality human capital through pragmatic and dynamic training, research, and entrepreneurial services for the Information and Communication Technology sector in Nigeria and the world at large.</p>
-        </div>
+{# ── Page header ── #}
+<section class="border-b border-neutral-200 bg-neutral-50">
+    <div class="page-container py-12" data-aos="fade-up">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">About</p>
+        <h1 class="mt-2 font-display text-4xl font-semibold text-brand-black">
+            School of Information and Communication Technology
+        </h1>
+        <p class="mt-3 max-w-2xl text-lg text-neutral-600">
+            Established in the 2009/2010 session, SICT has grown into one of the leading ICT schools in Nigeria.
+        </p>
     </div>
-
-    <h2 class="font-display text-2xl text-brand-black mb-3">Department of Information Technology</h2>
-    <p class="text-lg leading-relaxed">
-        The Department of Information Technology was founded in 2021 under the School of Information and
-        Communication Technology (SICT). The department trains students in the knowledge, skills, and
-        practices needed to design, build, deploy, and manage the information systems that organizations
-        rely on every day.
-    </p>
 </section>
+
+{# ── Featured image ── #}
+<section class="page-container -mt-8 mb-16" data-aos="zoom-in">
+    <img src="{% static 'image/about-classroom.jpg' %}"
+         alt="Students studying together on campus"
+         class="h-64 w-full border border-neutral-200 object-cover shadow-hard md:h-96">
+</section>
+
+{# ── Body ── #}
+<div class="page-container pb-20">
+    <div class="grid gap-12 lg:grid-cols-3">
+
+        <article class="space-y-10 lg:col-span-2">
+
+            <div data-aos="fade-up">
+                <h2 class="font-display text-2xl font-semibold text-brand-black">Our story</h2>
+                <p class="mt-3 text-lg leading-relaxed text-neutral-700">
+                    The School of Information and Communication Technology (SICT) was created in the
+                    2009/2010 academic session. The pioneer departments were Computer Science, Cyber
+                    Security Science, Information and Media Technology, and Library and Information
+                    Technology. SICT received the National Universities Commission's Pre-Accreditation
+                    Resource Verification Visit in 2010, which saw all its departments accredited. Since
+                    its inception, the School has graduated over 1,000 undergraduates and 500
+                    postgraduates.
+                </p>
+            </div>
+
+            <div data-aos="fade-up">
+                <h2 class="font-display text-2xl font-semibold text-brand-black">Department of Information Technology</h2>
+                <p class="mt-3 text-lg leading-relaxed text-neutral-700">
+                    The Department of Information Technology was founded in 2021 under the School of
+                    Information and Communication Technology (SICT). The department trains students in
+                    the knowledge, skills, and practices needed to design, build, deploy, and manage the
+                    information systems that organizations rely on every day.
+                </p>
+            </div>
+        </article>
+
+        {# Sidebar: philosophy / vision / mission #}
+        <aside class="space-y-4" data-aos="fade-left">
+            <article class="card p-6 transition-shadow hover:shadow-hard">
+                <span class="badge badge-brand">Philosophy</span>
+                <p class="mt-3 text-sm leading-relaxed text-neutral-700">
+                    To encourage the advancement of learning and the acquisition of higher education in Technology.
+                </p>
+            </article>
+
+            <article class="card p-6 transition-shadow hover:shadow-hard">
+                <span class="badge badge-brand">Vision</span>
+                <p class="mt-3 text-sm leading-relaxed text-neutral-700">
+                    To be the world-class centre of Excellence in training and research in Information
+                    and Communication Technology in Nigeria.
+                </p>
+            </article>
+
+            <article class="card p-6 transition-shadow hover:shadow-hard">
+                <span class="badge badge-brand">Mission</span>
+                <p class="mt-3 text-sm leading-relaxed text-neutral-700">
+                    To build excellent research capacity and develop high-quality human capital through
+                    pragmatic and dynamic training, research, and entrepreneurial services for the
+                    Information and Communication Technology sector in Nigeria and the world at large.
+                </p>
+            </article>
+        </aside>
+    </div>
+</div>
 {% endblock %}

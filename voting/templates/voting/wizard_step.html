@@ -3,34 +3,71 @@
 {% block title %}{{ position.title }} · NAIFT Voting{% endblock %}
 
 {% block content %}
-<h1 class="font-display text-3xl text-brand-purple mb-8">{{ position.title }}</h1>
+<div class="mb-6">
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Ballot</p>
+    <h1 class="mt-1 font-display text-3xl font-semibold text-brand-black">{{ position.title }}</h1>
+</div>
 
-<form method="post" class="flex flex-col gap-4">
+<form method="post" class="flex flex-col gap-6">
     {% csrf_token %}
-    {% for contestant in contestants %}
-        <label class="flex items-center gap-4 border border-brand-purple/20 rounded-lg p-4 cursor-pointer">
-            <input type="radio" name="contestant" value="{{ contestant.pk }}" required{% if contestant.pk == current_pick_id %} checked{% endif %}>
-            {% if contestant.photo %}
-                <img src="{{ contestant.photo.url }}" alt="{{ contestant.name }}" class="h-16 w-16 rounded-full object-cover">
-            {% endif %}
-            <span>
-                <span class="font-display text-lg">{{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}</span>
-                <span class="block text-sm text-brand-black/70">{{ contestant.manifesto }}</span>
-            </span>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for contestant in contestants %}
+        <label class="group executive-card cursor-pointer
+                      has-[input:checked]:border-brand-purple
+                      has-[input:checked]:shadow-hard-brand">
+            <input type="radio" name="contestant" value="{{ contestant.pk }}" required
+                   {% if contestant.pk == current_pick_id %}checked{% endif %}
+                   class="sr-only">
+
+            <div class="executive-card__media">
+                {% if contestant.photo %}
+                    <img src="{{ contestant.photo.url }}" alt="{{ contestant.name }}">
+                {% else %}
+                    <div class="grid h-full w-full place-items-center bg-neutral-100 text-neutral-400">
+                        <span class="font-display text-3xl">{{ contestant.name|first|upper }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="executive-card__body">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                        <h2 class="executive-card__name">
+                            {{ contestant.name }}{% if contestant.alias %} <span class="text-neutral-500">({{ contestant.alias }})</span>{% endif %}
+                        </h2>
+                        <p class="executive-card__position">{{ position.title }}</p>
+                    </div>
+
+                    <span class="mt-1 grid h-5 w-5 shrink-0 place-items-center border border-neutral-300
+                                 group-has-[input:checked]:border-brand-purple
+                                 group-has-[input:checked]:bg-brand-purple">
+                        <span class="h-2 w-2 bg-white opacity-0 group-has-[input:checked]:opacity-100"></span>
+                    </span>
+                </div>
+
+                {% if contestant.manifesto %}
+                    <p class="mt-3 line-clamp-4 text-sm leading-relaxed text-neutral-600">
+                        {{ contestant.manifesto }}
+                    </p>
+                {% endif %}
+            </div>
         </label>
-    {% endfor %}
-    {% if is_edit_mode %}
-        <div class="flex gap-4">
+        {% endfor %}
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-6">
+        {% if is_edit_mode %}
             {% if previous_position %}
-                <button type="submit" name="nav" value="previous" class="border border-brand-purple text-brand-purple px-4 py-2 rounded hover:bg-brand-purple/10">Previous</button>
+                <button type="submit" name="nav" value="previous" class="btn btn-outline">← Previous</button>
             {% endif %}
             {% if next_position %}
-                <button type="submit" name="nav" value="next" class="border border-brand-purple text-brand-purple px-4 py-2 rounded hover:bg-brand-purple/10">Next</button>
+                <button type="submit" name="nav" value="next" class="btn btn-primary">Next →</button>
             {% endif %}
-            <button type="submit" name="nav" value="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Submit</button>
-        </div>
-    {% else %}
-        <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Next</button>
-    {% endif %}
+            <button type="submit" name="nav" value="submit" class="btn btn-primary ml-auto">Submit Vote</button>
+        {% else %}
+            <button type="submit" class="btn btn-primary ml-auto">Next →</button>
+        {% endif %}
+    </div>
 </form>
 {% endblock %}

@@ -3,23 +3,45 @@
 {% block title %}{{ election.session }} Results · NAIFT Voting{% endblock %}
 
 {% block content %}
-<h1 class="font-display text-3xl text-brand-purple mb-8">{{ election.session }} Results</h1>
+<div class="mb-8">
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Election Results</p>
+    <h1 class="mt-1 font-display text-3xl font-semibold text-brand-black">{{ election.session }}</h1>
+</div>
 
 {% regroup tallies by position as position_list %}
 {% for position in position_list %}
-    <h2 class="font-display text-2xl text-brand-black mb-3">{{ position.grouper }}</h2>
-    <ul class="mb-8 space-y-2">
-        {% for contestant in position.list %}
-            <li class="flex justify-between items-center border-b border-brand-black/10 py-2">
-                <span class="flex items-center gap-2">
-                    {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
-                    {% if contestant.is_winner %}
-                        <span class="text-xs font-display uppercase tracking-wide bg-brand-purple text-brand-white px-2 py-0.5 rounded-full">Winner</span>
+    <section class="mb-10">
+        <h2 class="mb-3 font-display text-xl font-semibold text-brand-black">{{ position.grouper }}</h2>
+
+        <ul class="divide-y divide-neutral-200 border border-neutral-200 bg-white">
+            {% for contestant in position.list %}
+            <li class="flex items-center justify-between gap-4 px-4 py-3
+                       {% if contestant.is_winner %}bg-brand-purple-soft{% endif %}">
+
+                <div class="flex min-w-0 items-center gap-3">
+                    {% if contestant.photo %}
+                        <img src="{{ contestant.photo.url }}" alt=""
+                             class="h-10 w-10 shrink-0 border border-neutral-200 object-cover">
                     {% endif %}
+                    <span class="flex min-w-0 flex-wrap items-center gap-2">
+                        <span class="truncate font-medium text-brand-black">
+                            {{ contestant.name }}{% if contestant.alias %} <span class="text-neutral-500">({{ contestant.alias }})</span>{% endif %}
+                        </span>
+                        {% if contestant.is_winner %}
+                            <span class="badge badge-brand">Winner</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <span class="shrink-0 font-display text-lg font-semibold text-brand-purple">
+                    {{ contestant.vote_count }}
+                    <span class="font-body text-xs font-normal text-neutral-500">
+                        vote{{ contestant.vote_count|pluralize }}
+                    </span>
                 </span>
-                <span class="font-display text-brand-purple">{{ contestant.vote_count }} vote{{ contestant.vote_count|pluralize }}</span>
             </li>
-        {% endfor %}
-    </ul>
+            {% endfor %}
+        </ul>
+    </section>
 {% endfor %}
 {% endblock %}

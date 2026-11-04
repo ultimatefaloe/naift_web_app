@@ -3,35 +3,59 @@
 {% block title %}Contestants · NAIFT Admin{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-8">
-    <h1 class="font-display text-3xl text-brand-purple">Contestants</h1>
-    <a href="{% url 'admin_panel:contestant_create' %}" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Add Contestant</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Contestants</h1>
+        <p class="page-header__sub">Candidates running in the current election.</p>
+    </div>
+    <a href="{% url 'admin_panel:contestant_create' %}" class="btn btn-primary">+ Add Contestant</a>
 </div>
 
-<table class="w-full text-left border-collapse">
-    <thead>
-        <tr class="border-b border-brand-black/10">
-            <th class="py-2">Name</th>
-            <th class="py-2">Position</th>
-            <th class="py-2">Election</th>
-            <th class="py-2"></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for contestant in contestants %}
-            <tr class="border-b border-brand-black/10">
-                <td class="py-2">{{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}</td>
-                <td class="py-2">{{ contestant.position }}</td>
-                <td class="py-2">{{ contestant.election }}</td>
-                <td class="py-2 text-right">
-                    <a href="{% url 'admin_panel:contestant_update' contestant.pk %}" class="text-brand-purple hover:underline">Edit</a>
-                    &middot;
-                    <a href="{% url 'admin_panel:contestant_delete' contestant.pk %}" class="text-brand-purple hover:underline">Delete</a>
+{% if contestants %}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="w-12"></th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Election</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contestant in contestants %}
+            <tr>
+                <td>
+                    {% if contestant.photo %}
+                        <img src="{{ contestant.photo.url }}" alt=""
+                             class="h-10 w-10 border border-neutral-200 object-cover">
+                    {% else %}
+                        <div class="grid h-10 w-10 place-items-center bg-neutral-100 font-display text-sm font-semibold text-neutral-400">
+                            {{ contestant.name|first|upper }}
+                        </div>
+                    {% endif %}
+                </td>
+                <td class="font-medium text-brand-black">
+                    {{ contestant.name }}{% if contestant.alias %} <span class="text-neutral-500">({{ contestant.alias }})</span>{% endif %}
+                </td>
+                <td>{{ contestant.position }}</td>
+                <td class="text-neutral-600">{{ contestant.election }}</td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{% url 'admin_panel:contestant_update' contestant.pk %}">Edit</a>
+                        <a href="{% url 'admin_panel:contestant_delete' contestant.pk %}" class="danger">Delete</a>
+                    </div>
                 </td>
             </tr>
-        {% empty %}
-            <tr><td colspan="4" class="py-4">No contestants yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="border border-neutral-200 bg-white p-10 text-center">
+    <p class="text-lg text-neutral-700">No contestants yet.</p>
+    <a href="{% url 'admin_panel:contestant_create' %}" class="btn btn-primary mt-4">+ Add Contestant</a>
+</div>
+{% endif %}
 {% endblock %}

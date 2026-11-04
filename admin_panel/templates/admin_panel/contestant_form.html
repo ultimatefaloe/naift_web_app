@@ -3,12 +3,199 @@
 {% block title %}Contestant · NAIFT Admin{% endblock %}
 
 {% block content %}
-<a href="{% url 'admin_panel:contestant_list' %}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Contestants</a>
-<h1 class="font-display text-3xl text-brand-purple mb-8">{% if object %}Edit{% else %}Add{% endif %} Contestant</h1>
+<a href="{% url 'admin_panel:contestant_list' %}"
+   class="mb-4 inline-block text-sm font-medium text-brand-purple hover:underline">
+    ← Back to Contestants
+</a>
 
-<form method="post" enctype="multipart/form-data" class="flex flex-col gap-4 max-w-md">
+<div class="page-header">
+    <h1 class="page-header__title">{% if object %}Edit{% else %}Add{% endif %} Contestant</h1>
+</div>
+
+<form method="post" enctype="multipart/form-data"
+      class="max-w-2xl border border-neutral-200 bg-white p-6 sm:p-8">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Save</button>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-error mb-4">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <div class="flex flex-col gap-5">
+        {% for field in form %}
+
+            {# ── Image field: custom upload + preview + deselect ── #}
+            {% if field.name == 'photo' %}
+                <div class="form-field">
+                    <label class="form-label" for="{{ field.id_for_label }}">
+                        {{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}
+                    </label>
+
+                    {# ── CHANGED: div → label ── #}
+                    <label class="image-upload"
+                        data-image-upload
+                        {% if field.value %}data-has-existing="1"{% endif %}>
+
+                        <input type="file"
+                            name="{{ field.html_name }}"
+                            id="{{ field.id_for_label }}"
+                            accept="image/*"
+                            class="sr-only">
+
+                        {# Empty state #}
+                        <div data-empty {% if field.value %}hidden{% endif %}>
+                            <p class="font-medium text-neutral-700">Click to upload a photo</p>
+                            <p class="mt-1 text-xs text-neutral-500">Square images look best. PNG or JPG.</p>
+                        </div>
+
+                        {# Preview state #}
+                        <div class="image-upload__preview" data-preview {% if not field.value %}hidden{% endif %}>
+                            <img {% if field.value %}src="{{ field.value.url }}"{% endif %} alt="">
+                            <button type="button" class="image-upload__remove" data-remove aria-label="Remove image">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 6l12 12M18 6L6 18" stroke-linecap="square"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {# Django's clear-checkbox for edit mode — hidden but wired up #}
+                        {% if field.value %}
+                            <input type="checkbox"
+                                name="{{ field.html_name }}-clear"
+                                id="{{ field.id_for_label }}_clear"
+                                class="hidden"
+                                data-clear-flag>
+                        {% endif %}
+                    </label>
+
+                    {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+                </div>
+
+
+            {# ── Checkbox field ── #}
+            {% elif field.field.widget.input_type == 'checkbox' %}
+                <label class="flex cursor-pointer items-start gap-3 border border-neutral-200 bg-neutral-50 p-3">
+                    <input type="checkbox"
+                           name="{{ field.html_name }}"
+                           id="{{ field.id_for_label }}"
+                           {% if field.value %}checked{% endif %}
+                           class="mt-0.5 h-4 w-4 border-neutral-400 accent-brand-purple">
+                    <span>
+                        <span class="block text-sm font-medium text-neutral-800">{{ field.label }}</span>
+                        {% if field.help_text %}<span class="block text-xs text-neutral-500">{{ field.help_text }}</span>{% endif %}
+                    </span>
+                </label>
+                {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+
+            {# ── Select field ── #}
+            {% elif field.field.widget.input_type == 'select' %}
+                <div class="form-field">
+                    <label class="form-label" for="{{ field.id_for_label }}">
+                        {{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}
+                    </label>
+                    <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-select"
+                            {% if field.field.required %}required{% endif %}>
+                        {% for value, label in field.field.choices %}
+                            <option value="{{ value }}" {% if field.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+                </div>
+
+            {# ── Textarea ── #}
+            {% elif field.field.widget.input_type == 'textarea' %}
+                <div class="form-field">
+                    <label class="form-label" for="{{ field.id_for_label }}">
+                        {{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}
+                    </label>
+                    <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                              rows="5" class="form-textarea"
+                              {% if field.field.required %}required{% endif %}
+                              {% if field.field.widget.attrs.placeholder %}placeholder="{{ field.field.widget.attrs.placeholder }}"{% endif %}>{{ field.value|default_if_none:"" }}</textarea>
+                    {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+                </div>
+
+            {# ── Standard text/email/url/number ── #}
+            {% else %}
+                <div class="form-field">
+                    <label class="form-label" for="{{ field.id_for_label }}">
+                        {{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}
+                    </label>
+                    <input type="{{ field.field.widget.input_type|default:'text' }}"
+                           name="{{ field.html_name }}"
+                           id="{{ field.id_for_label }}"
+                           value="{{ field.value|default_if_none:'' }}"
+                           class="form-input"
+                           {% if field.field.required %}required{% endif %}
+                           {% if field.field.widget.attrs.placeholder %}placeholder="{{ field.field.widget.attrs.placeholder }}"{% endif %}>
+                    {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+                </div>
+            {% endif %}
+
+        {% endfor %}
+    </div>
+
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-6">
+        <a href="{% url 'admin_panel:contestant_list' %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Contestant</button>
+    </div>
 </form>
+
+<script>
+    document.querySelectorAll('[data-image-upload]').forEach((wrap) => {
+        const input       = wrap.querySelector('input[type="file"]');
+        const empty       = wrap.querySelector('[data-empty]');
+        const preview     = wrap.querySelector('[data-preview]');
+        const img         = preview.querySelector('img');
+        const removeBtn   = wrap.querySelector('[data-remove]');
+        const clearFlag   = wrap.querySelector('[data-clear-flag]');
+        const originalSrc = img.getAttribute('src') || '';
+
+        input.addEventListener('change', () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            img.src = URL.createObjectURL(file);
+            empty.hidden = true;
+            preview.hidden = false;
+            wrap.classList.add('image-upload--filled');   // cosmetic swap
+            if (clearFlag) clearFlag.checked = false;
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+            // ── both required now that the wrapper is a <label> ──
+            e.preventDefault();
+            e.stopPropagation();
+
+            const hadNewFile = input.files && input.files.length > 0;
+            input.value = '';
+
+            if (hadNewFile) {
+            // revert to previous state
+            if (originalSrc) {
+                img.src = originalSrc;
+                preview.hidden = false;
+                empty.hidden = true;
+                wrap.classList.add('image-upload--filled');
+            } else {
+                img.removeAttribute('src');
+                preview.hidden = true;
+                empty.hidden = false;
+                wrap.classList.remove('image-upload--filled');
+            }
+            if (clearFlag) clearFlag.checked = false;
+            } else {
+            // no new file — clear the existing image on save
+            img.removeAttribute('src');
+            preview.hidden = true;
+            empty.hidden = false;
+            wrap.classList.remove('image-upload--filled');
+            if (clearFlag) clearFlag.checked = true;
+            }
+        });
+    });
+</script>
 {% endblock %}

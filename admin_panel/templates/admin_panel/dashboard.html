@@ -3,65 +3,128 @@
 {% block title %}Dashboard · NAIFT Admin{% endblock %}
 
 {% block content %}
-<h1 class="font-display text-3xl text-brand-purple mb-8">Dashboard</h1>
-
-<div class="grid sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
-        <p class="text-3xl font-display text-brand-purple">{{ position_count }}</p>
-        <p>Positions</p>
-    </div>
-    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
-        <p class="text-3xl font-display text-brand-purple">{{ contestant_count }}</p>
-        <p>Contestants</p>
-    </div>
-    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
-        <p class="text-3xl font-display text-brand-purple">{{ executive_count }}</p>
-        <p>Executives</p>
-    </div>
-    <div class="border border-brand-purple/20 rounded-lg p-5 text-center">
-        <p class="text-3xl font-display text-brand-purple">{% if current_election %}{{ current_election.get_status_display }}{% else %}None{% endif %}</p>
-        <p>Current Election</p>
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Dashboard</h1>
+        <p class="page-header__sub">Overview of the department's election activity.</p>
     </div>
 </div>
 
-<h2 class="font-display text-2xl text-brand-black mb-4">Live Voting</h2>
-{% if ongoing_election %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    {% for position in chart_positions %}
-        <div class="border border-brand-purple/20 rounded-lg p-5 mb-6">
-            <h3 class="font-display text-lg text-brand-black mb-3">{{ position.position_title }}</h3>
-            <canvas id="chart-{{ position.position_id }}" height="120"></canvas>
-            {{ position.data|json_script:position.element_id }}
-        </div>
-        <script>
-            (function () {
-                var data = JSON.parse(document.getElementById("{{ position.element_id }}").textContent);
-                new Chart(document.getElementById("chart-{{ position.position_id }}"), {
-                    type: "bar",
-                    data: {
-                        labels: data.labels,
-                        datasets: [{ label: "Votes", data: data.votes, backgroundColor: "#4C1D95" }],
-                    },
-                    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
-                });
-            })();
-        </script>
-    {% endfor %}
-{% else %}
-    <p class="text-lg mb-10">No voting currently in progress.</p>
-{% endif %}
-
-<h2 class="font-display text-2xl text-brand-black mb-4 mt-4">Current Executive</h2>
-{% if current_executives %}
-    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10">
-        {% for executive in current_executives %}
-            <div class="border border-brand-purple/20 rounded-lg p-4 text-center">
-                <p class="font-display text-brand-black">{{ executive.name }}</p>
-                <p class="text-brand-purple text-sm">{{ executive.position }}</p>
-            </div>
-        {% endfor %}
+{# ── Stat cards ── #}
+<div class="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="stat-card">
+        <span class="stat-card__label">Positions</span>
+        <span class="stat-card__value">{{ position_count }}</span>
+        <span class="stat-card__hint">Open offices on the ballot</span>
     </div>
-{% else %}
-    <p class="text-lg mb-10">No current executive has been published yet.</p>
-{% endif %}
+    <div class="stat-card">
+        <span class="stat-card__label">Contestants</span>
+        <span class="stat-card__value">{{ contestant_count }}</span>
+        <span class="stat-card__hint">Candidates this election cycle</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Executives</span>
+        <span class="stat-card__value">{{ executive_count }}</span>
+        <span class="stat-card__hint">Current + past records</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-card__label">Current election</span>
+        <span class="stat-card__value text-xl">
+            {% if current_election %}{{ current_election.get_status_display }}{% else %}None{% endif %}
+        </span>
+        <span class="stat-card__hint">
+            {% if current_election %}{{ current_election.session }}{% else %}No active session{% endif %}
+        </span>
+    </div>
+</div>
+
+{# ── Live voting ── #}
+<section class="mb-12">
+    <header class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="font-display text-xl font-semibold text-brand-black">Live voting</h2>
+        {% if ongoing_election %}
+            <span class="badge badge-success">● Live</span>
+        {% endif %}
+    </header>
+
+    {% if ongoing_election %}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+            {% for position in chart_positions %}
+                <div class="border border-neutral-200 bg-white p-5">
+                    <h3 class="mb-3 font-display text-base font-semibold text-brand-black">
+                        {{ position.position_title }}
+                    </h3>
+                    <canvas id="chart-{{ position.position_id }}" height="140"></canvas>
+                    {{ position.data|json_script:position.element_id }}
+                </div>
+                <script>
+                    (function () {
+                        var data = JSON.parse(document.getElementById("{{ position.element_id }}").textContent);
+                        new Chart(document.getElementById("chart-{{ position.position_id }}"), {
+                            type: "bar",
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    label: "Votes",
+                                    data: data.votes,
+                                    backgroundColor: "#4C1D95",
+                                    borderRadius: 0,
+                                }],
+                            },
+                            options: {
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { grid: { display: false } },
+                                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                                },
+                            },
+                        });
+                    })();
+                </script>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">
+            No voting currently in progress.
+        </div>
+    {% endif %}
+</section>
+
+{# ── Current executive ── #}
+<section>
+    <header class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="font-display text-xl font-semibold text-brand-black">Current executive</h2>
+        <a href="{% url 'admin_panel:executive_list' %}" class="text-sm font-medium text-brand-purple hover:underline">
+            Manage →
+        </a>
+    </header>
+
+    {% if current_executives %}
+        <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {% for executive in current_executives %}
+            <article class="executive-card">
+                <div class="executive-card__media">
+                    {% if executive.photo %}
+                        <img src="{{ executive.photo.url }}" alt="{{ executive.name }}">
+                    {% else %}
+                        <div class="grid h-full w-full place-items-center bg-neutral-100">
+                            <span class="font-display text-4xl font-semibold text-neutral-300">{{ executive.name|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="executive-card__body">
+                    <h3 class="executive-card__name">{{ executive.name }}</h3>
+                    <p class="executive-card__position">{{ executive.position }}</p>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">
+            No current executive has been published yet.
+        </div>
+    {% endif %}
+</section>
 {% endblock %}

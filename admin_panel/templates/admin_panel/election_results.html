@@ -3,32 +3,52 @@
 {% block title %}{{ election.session }} Results · NAIFT Admin{% endblock %}
 
 {% block content %}
-<a href="{% url 'admin_panel:election_list' %}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Elections</a>
-<h1 class="font-display text-3xl text-brand-purple mb-2">{{ election.session }} Results</h1>
-<p class="text-brand-black/70 mb-2">Status: {{ election.get_status_display }}.</p>
-{% if election.is_results_published %}
-    <p class="mb-8"><a href="{% url 'voting:results_detail' election.pk %}" class="text-brand-purple hover:underline">View Public Results</a></p>
-{% else %}
-    <div class="mb-8"></div>
-{% endif %}
+<a href="{% url 'admin_panel:election_list' %}"
+   class="mb-4 inline-block text-sm font-medium text-brand-purple hover:underline">
+    ← Back to Elections
+</a>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">{{ election.session }} Results</h1>
+        <p class="page-header__sub flex flex-wrap items-center gap-2">
+            <span class="badge">{{ election.get_status_display }}</span>
+            {% if election.is_results_published %}
+                <a href="{% url 'voting:results_detail' election.pk %}" class="text-brand-purple hover:underline">
+                    View public results →
+                </a>
+            {% else %}
+                <span class="text-neutral-500">Not yet published to the public site.</span>
+            {% endif %}
+        </p>
+    </div>
+</div>
 
 {% regroup tallies by position as position_list %}
 {% for position in position_list %}
-    <h2 class="font-display text-2xl text-brand-black mb-3">{{ position.grouper }}</h2>
-    <ul class="mb-8 space-y-2">
+<section class="mb-8">
+    <h2 class="mb-3 font-display text-lg font-semibold text-brand-black">{{ position.grouper }}</h2>
+    <ul class="divide-y divide-neutral-200 border border-neutral-200 bg-white">
         {% for contestant in position.list %}
-            <li class="flex justify-between items-center border-b border-brand-black/10 py-2">
-                <span class="flex items-center gap-2">
-                    {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
-                    {% if contestant.is_winner %}
-                        <span class="text-xs font-display uppercase tracking-wide bg-brand-purple text-brand-white px-2 py-0.5 rounded-full">Winner</span>
-                    {% endif %}
+        <li class="flex items-center justify-between gap-4 px-4 py-3
+                   {% if contestant.is_winner %}bg-brand-purple-soft{% endif %}">
+            <span class="flex min-w-0 items-center gap-2">
+                <span class="truncate font-medium text-brand-black">
+                    {{ contestant.name }}{% if contestant.alias %} <span class="text-neutral-500">({{ contestant.alias }})</span>{% endif %}
                 </span>
-                <span class="font-display text-brand-purple">{{ contestant.vote_count }} vote{{ contestant.vote_count|pluralize }}</span>
-            </li>
+                {% if contestant.is_winner %}<span class="badge badge-brand">Winner</span>{% endif %}
+            </span>
+            <span class="shrink-0 font-display text-lg font-semibold text-brand-purple">
+                {{ contestant.vote_count }}
+                <span class="font-body text-xs font-normal text-neutral-500">vote{{ contestant.vote_count|pluralize }}</span>
+            </span>
+        </li>
         {% endfor %}
     </ul>
+</section>
 {% empty %}
-    <p>No contestants have been added for this election yet.</p>
+<div class="border border-neutral-200 bg-white p-8 text-center text-sm text-neutral-500">
+    No contestants have been added for this election yet.
+</div>
 {% endfor %}
 {% endblock %}

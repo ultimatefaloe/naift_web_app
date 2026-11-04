@@ -3,11 +3,26 @@
 {% block title %}Delete Executive · NAIFT Admin{% endblock %}
 
 {% block content %}
-<h1 class="font-display text-3xl text-brand-purple mb-8">Delete Executive</h1>
-<p class="mb-6">Are you sure you want to delete "{{ object.name }}"?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Confirm Delete</button>
-    <a href="{% url 'admin_panel:executive_list' %}" class="ml-4 text-brand-purple hover:underline">Cancel</a>
-</form>
+<div class="mx-auto max-w-lg">
+    <a href="{% url 'admin_panel:executive_list' %}"
+       class="mb-4 inline-block text-sm font-medium text-brand-purple hover:underline">
+        ← Back to Executives
+    </a>
+
+    <div class="danger-zone">
+        <p class="text-xs font-semibold uppercase tracking-wider text-error">Destructive action</p>
+        <h1 class="mt-2 font-display text-2xl font-semibold text-brand-black">
+            Delete “{{ object.name }}”?
+        </h1>
+        <p class="mt-2 text-sm text-neutral-700">
+            This will permanently remove the executive record. This action cannot be undone.
+        </p>
+
+        <form method="post" class="mt-6 flex flex-wrap items-center gap-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, delete</button>
+            <a href="{% url 'admin_panel:executive_list' %}" class="btn btn-ghost">Cancel</a>
+        </form>
+    </div>
+</div>
 {% endblock %}

@@ -3,16 +3,43 @@
 {% block title %}Student Login · NAIFT Voting{% endblock %}
 
 {% block content %}
-<div class="max-w-sm mx-auto mt-16">
-    <h1 class="font-display text-3xl text-brand-purple mb-6 text-center">Student Login</h1>
-    {% if error %}
-        <p class="mb-4 px-4 py-3 rounded bg-brand-purple/10 text-brand-purple">{{ error }}</p>
-    {% endif %}
-    <form method="post" class="flex flex-col gap-4">
-        {% csrf_token %}
-        <input type="text" name="first_name" placeholder="First Name" required class="border border-brand-black/20 rounded px-4 py-2">
-        <input type="text" name="matric_number" placeholder="Matric Number (e.g. 2022/1/90976CF)" required class="border border-brand-black/20 rounded px-4 py-2">
-        <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Log in</button>
-    </form>
+<div class="mx-auto max-w-md">
+    <div class="card p-6 sm:p-8">
+
+        <div class="mb-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Student Access</p>
+            <h1 class="mt-1 font-display text-3xl font-semibold text-brand-black">Student Login</h1>
+            <p class="mt-2 text-sm text-neutral-600">Enter your credentials to access the ballot.</p>
+        </div>
+
+        {% if error %}
+            <div class="mb-4 border border-error/30 bg-error-soft px-4 py-3 text-sm font-medium text-error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post" class="flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div class="form-field">
+                <label class="form-label" for="first_name">
+                    First Name <span class="req">*</span>
+                </label>
+                <input id="first_name" type="text" name="first_name"
+                       placeholder="Jane" required class="form-input">
+            </div>
+
+            <div class="form-field">
+                <label class="form-label" for="matric_number">
+                    Matric Number <span class="req">*</span>
+                </label>
+                <input id="matric_number" type="text" name="matric_number"
+                       placeholder="e.g. 2022/1/90976CF" required class="form-input">
+                <p class="form-help">Use the format shown on your ID card.</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block mt-2">Log in</button>
+        </form>
+    </div>
 </div>
 {% endblock %}

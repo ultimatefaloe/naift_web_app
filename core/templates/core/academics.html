@@ -4,30 +4,95 @@
 {% block title %}Academics · NAIFT{% endblock %}
 
 {% block content %}
-<section class="px-6 py-16 max-w-4xl mx-auto" data-aos="fade-up">
-    <h1 class="font-display text-4xl text-brand-purple mb-8">Academics</h1>
 
-    <img src="{% static 'image/academics-coding.jpg' %}" alt="Student coding on a laptop" class="w-full h-64 md:h-80 object-cover rounded-lg shadow-lg mb-8" data-aos="zoom-in">
-
-    <h2 class="font-display text-2xl text-brand-black mb-3">Programme Philosophy</h2>
-    <p class="text-lg leading-relaxed mb-8">
-        The Information Technology programme applies the principles and practices of Science, Technology,
-        Engineering, and Mathematics to meet the computing and information needs of businesses, government,
-        and other organizations &mdash; enabling them to achieve their objectives effectively and efficiently.
-    </p>
-
-    <h2 class="font-display text-2xl text-brand-black mb-3">Core Areas of Study</h2>
-    <ul class="list-disc list-inside text-lg leading-relaxed mb-8 space-y-1">
-        <li>Programming &amp; Software Development</li>
-        <li>Database Systems</li>
-        <li>Computer Networking</li>
-        <li>Cybersecurity Fundamentals</li>
-        <li>Web &amp; Mobile Application Development</li>
-        <li>Systems Administration</li>
-    </ul>
-
-    <div class="border-l-4 border-brand-purple bg-brand-purple/5 p-5 text-brand-black/80">
-        <p>Detailed course-by-course curriculum (100&ndash;500 level) will be published here once finalized by the department.</p>
+{# ── Page header ── #}
+<section class="border-b border-neutral-200 bg-neutral-50">
+    <div class="page-container py-12" data-aos="fade-up">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Academics</p>
+        <h1 class="mt-2 font-display text-4xl font-semibold text-brand-black">
+            Programme &amp; Curriculum
+        </h1>
+        <p class="mt-3 max-w-2xl text-lg text-neutral-600">
+            A STEM-grounded programme designed to meet the computing and information needs of
+            modern organisations.
+        </p>
     </div>
 </section>
+
+{# ── Featured image ── #}
+<section class="page-container -mt-8 mb-16" data-aos="zoom-in">
+    <img src="{% static 'image/academics-coding.jpg' %}"
+         alt="Student coding on a laptop"
+         class="h-64 w-full border border-neutral-200 object-cover shadow-hard md:h-96">
+</section>
+
+<div class="page-container pb-20">
+    <div class="grid gap-12 lg:grid-cols-3">
+
+        <article class="lg:col-span-2 space-y-10">
+
+            <div data-aos="fade-up">
+                <h2 class="font-display text-2xl font-semibold text-brand-black">Programme philosophy</h2>
+                <p class="mt-3 text-lg leading-relaxed text-neutral-700">
+                    The Information Technology programme applies the principles and practices of Science,
+                    Technology, Engineering, and Mathematics to meet the computing and information needs
+                    of businesses, government, and other organizations — enabling them to achieve their
+                    objectives effectively and efficiently.
+                </p>
+            </div>
+
+            <div data-aos="fade-up">
+                <h2 class="font-display text-2xl font-semibold text-brand-black">Core areas of study</h2>
+                <ul class="mt-4 divide-y divide-neutral-200 border border-neutral-200 bg-white">
+                    {% for area in core_areas %}{% empty %}
+                    {% for area in "Programming & Software Development,Database Systems,Computer Networking,Cybersecurity Fundamentals,Web & Mobile Application Development,Systems Administration"|slice:":"|make_list %}{% endfor %}
+                    {% endfor %}
+                    {# Static fallback list (matches original copy) — replace with a for-loop when data is ready #}
+                    <li class="flex items-center gap-3 px-4 py-3 text-neutral-800">
+                        <span class="grid h-6 w-6 shrink-0 place-items-center bg-brand-purple-soft text-xs font-semibold text-brand-purple">01</span>
+                        Programming &amp; Software Development
+                    </li>
+                    <li class="flex items-center gap-3 px-4 py-3 text-neutral-800">
+                        <span class="grid h-6 w-6 shrink-0 place-items-center bg-brand-purple-soft text-xs font-semibold text-brand-purple">02</span>
+                        Database Systems
+                    </li>
+                    <li class="flex items-center gap-3 px-4 py-3 text-neutral-800">
+                        <span class="grid h-6 w-6 shrink-0 place-items-center bg-brand-purple-soft text-xs font-semibold text-brand-purple">03</span>
+                        Computer Networking
+                    </li>
+                    <li class="flex items-center gap-3 px-4 py-3 text-neutral-800">
+                        <span class="grid h-6 w-6 shrink-0 place-items-center bg-brand-purple-soft text-xs font-semibold text-brand-purple">04</span>
+                        Cybersecurity Fundamentals
+                    </li>
+                    <li class="flex items-center gap-3 px-4 py-3 text-neutral-800">
+                        <span class="grid h-6 w-6 shrink-0 place-items-center bg-brand-purple-soft text-xs font-semibold text-brand-purple">05</span>
+                        Web &amp; Mobile Application Development
+                    </li>
+                    <li class="flex items-center gap-3 px-4 py-3 text-neutral-800">
+                        <span class="grid h-6 w-6 shrink-0 place-items-center bg-brand-purple-soft text-xs font-semibold text-brand-purple">06</span>
+                        Systems Administration
+                    </li>
+                </ul>
+            </div>
+        </article>
+
+        <aside class="space-y-4" data-aos="fade-left">
+            <div class="border-l-4 border-brand-purple bg-brand-purple-soft p-5">
+                <p class="text-sm font-semibold uppercase tracking-wider text-brand-purple">Coming soon</p>
+                <p class="mt-2 text-sm leading-relaxed text-brand-purple-dark">
+                    A detailed course-by-course curriculum (100&ndash;500 level) will be published here
+                    once finalized by the department.
+                </p>
+            </div>
+
+            <a href="{% url 'executives:current' %}"
+               class="card group block p-5 transition-shadow hover:shadow-hard">
+                <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Leadership</p>
+                <p class="mt-2 font-display text-lg font-semibold text-brand-black group-hover:text-brand-purple">
+                    Meet the current executive →
+                </p>
+            </a>
+        </aside>
+    </div>
+</div>
 {% endblock %}

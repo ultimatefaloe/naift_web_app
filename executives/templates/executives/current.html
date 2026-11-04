@@ -4,46 +4,132 @@
 {% block title %}Current Executive · NAIFT{% endblock %}
 
 {% block content %}
-<section class="px-6 py-16 max-w-5xl mx-auto" data-aos="fade-up">
-    <img src="{% static 'image/executives-graduation.jpg' %}" alt="University graduation ceremony" class="w-full h-56 md:h-72 object-cover rounded-lg shadow-lg mb-8" data-aos="zoom-in">
 
-    <h1 class="font-display text-4xl text-brand-purple mb-8">Current Executive</h1>
+{# ── Page header ── #}
+<section class="border-b border-neutral-200 bg-neutral-50">
+    <div class="page-container py-12" data-aos="fade-up">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Leadership</p>
+        <h1 class="mt-2 font-display text-4xl font-semibold text-brand-black">
+            Current Executive
+        </h1>
+        <p class="mt-3 max-w-2xl text-lg text-neutral-600">
+            The students elected to represent the Department of Information Technology for the
+            current session.
+        </p>
+    </div>
+</section>
 
+{# ── Featured image ── #}
+<section class="page-container -mt-8 mb-16" data-aos="zoom-in">
+    <img src="{% static 'image/executives-graduation.jpg' %}"
+         alt="University graduation ceremony"
+         class="h-56 w-full border border-neutral-200 object-cover shadow-hard md:h-72">
+</section>
+
+{# ── Current executive ── #}
+<div class="page-container pb-20">
     {% regroup executives by session as session_list %}
     {% for session in session_list %}
-        <h2 class="font-display text-2xl text-brand-black mb-4">{{ session.grouper }}</h2>
-        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
-            {% for executive in session.list %}
-                <div class="border border-brand-purple/20 rounded-lg p-5 text-center" data-aos="fade-up">
-                    {% if executive.photo %}
-                        <img src="{{ executive.photo.url }}" alt="{{ executive.name }}" class="h-32 w-32 rounded-full object-cover mx-auto mb-3">
-                    {% endif %}
-                    <h3 class="font-display text-lg text-brand-black">{{ executive.name }}</h3>
-                    <p class="text-brand-purple">{{ executive.position }}</p>
-                </div>
-            {% endfor %}
-        </div>
-    {% empty %}
-        <p class="text-lg">No current executive has been published yet.</p>
-    {% endfor %}
+        <section class="mb-16" {% if not forloop.first %}data-aos="fade-up"{% endif %}>
 
-    {% if past %}
-        <h2 class="font-display text-2xl text-brand-black mb-4 mt-12">Past Executives</h2>
-        {% regroup past by session as past_session_list %}
-        {% for session in past_session_list %}
-            <h3 class="font-display text-xl text-brand-black/70 mb-4">Past Executive — {{ session.grouper }}</h3>
-            <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+            <header class="mb-6 flex flex-wrap items-baseline justify-between gap-2 border-b border-neutral-200 pb-3">
+                <div class="flex items-baseline gap-3">
+                    <h2 class="font-display text-2xl font-semibold text-brand-black">
+                        {{ session.grouper }}
+                    </h2>
+                    <span class="badge badge-brand">Current</span>
+                </div>
+                <span class="text-sm text-neutral-500">
+                    {{ session.list|length }} office{{ session.list|length|pluralize }}
+                </span>
+            </header>
+
+            <div class="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {% for executive in session.list %}
-                    <div class="border border-brand-black/10 rounded-lg p-5 text-center grayscale" data-aos="fade-up">
+                <article class="executive-card" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}0">
+                    <div class="executive-card__media">
                         {% if executive.photo %}
-                            <img src="{{ executive.photo.url }}" alt="{{ executive.name }}" class="h-32 w-32 rounded-full object-cover mx-auto mb-3">
+                            <img src="{{ executive.photo.url }}" alt="{{ executive.name }}">
+                        {% else %}
+                            <div class="grid h-full w-full place-items-center bg-neutral-100">
+                                <span class="font-display text-5xl font-semibold text-neutral-300">
+                                    {{ executive.name|first|upper }}
+                                </span>
+                            </div>
                         {% endif %}
-                        <h4 class="font-display text-lg text-brand-black">{{ executive.name }}</h4>
-                        <p class="text-brand-purple">{{ executive.position }}</p>
                     </div>
+
+                    <div class="executive-card__body">
+                        <h3 class="executive-card__name">{{ executive.name }}</h3>
+                        <p class="executive-card__position">{{ executive.position }}</p>
+                    </div>
+                </article>
                 {% endfor %}
             </div>
+        </section>
+    {% empty %}
+        <div class="border border-neutral-200 bg-white p-10 text-center">
+            <p class="text-sm font-semibold uppercase tracking-wider text-brand-purple">No data</p>
+            <p class="mt-2 text-lg text-neutral-700">No current executive has been published yet.</p>
+        </div>
+    {% endfor %}
+
+    {# ── Past executives ── #}
+    {% if past %}
+    <section class="mt-20 border-t border-neutral-200 pt-16" data-aos="fade-up">
+
+        <header class="mb-8">
+            <p class="text-xs font-semibold uppercase tracking-wider text-neutral-500">Archive</p>
+            <h2 class="mt-2 font-display text-3xl font-semibold text-brand-black">Past Executives</h2>
+            <p class="mt-2 max-w-2xl text-base text-neutral-600">
+                Former student executives who served the department in previous sessions.
+            </p>
+        </header>
+
+        {% regroup past by session as past_session_list %}
+        {% for session in past_session_list %}
+            <section class="mb-12">
+
+                <header class="mb-5 flex flex-wrap items-baseline justify-between gap-2 border-b border-neutral-200 pb-3">
+                    <div class="flex items-baseline gap-3">
+                        <h3 class="font-display text-xl font-semibold text-neutral-700">
+                            {{ session.grouper }}
+                        </h3>
+                        <span class="badge">Past</span>
+                    </div>
+                    <span class="text-sm text-neutral-400">
+                        {{ session.list|length }} office{{ session.list|length|pluralize }}
+                    </span>
+                </header>
+
+                <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {% for executive in session.list %}
+                    <article class="executive-card opacity-80 grayscale transition
+                                    hover:opacity-100 hover:grayscale-0"
+                             data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}0">
+
+                        <div class="executive-card__media">
+                            {% if executive.photo %}
+                                <img src="{{ executive.photo.url }}" alt="{{ executive.name }}">
+                            {% else %}
+                                <div class="grid h-full w-full place-items-center bg-neutral-100">
+                                    <span class="font-display text-5xl font-semibold text-neutral-300">
+                                        {{ executive.name|first|upper }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="executive-card__body">
+                            <h4 class="executive-card__name text-base">{{ executive.name }}</h4>
+                            <p class="executive-card__position">{{ executive.position }}</p>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
         {% endfor %}
+    </section>
     {% endif %}
-</section>
+</div>
 {% endblock %}

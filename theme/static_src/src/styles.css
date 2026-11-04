@@ -1,27 +1,99 @@
 @import "tailwindcss";
 
 /**
-  * A catch-all path to Django template files, JavaScript, and Python files
-  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
-  */
+ * Catch-all path to Django template files, JavaScript, and Python files
+ * that contain Tailwind CSS classes and will be scanned by Tailwind.
+ */
 @source "../../../**/*.{html,py,js}";
 
 @theme static {
-  --color-brand-purple: #4C1D95;
-  --color-brand-black: #0A0A0A;
-  --color-brand-white: #FFFFFF;
+  /* ============================================================
+     COLORS
+     ============================================================ */
+  /* Brand */
+  --color-brand-purple: #4c1d95;
+  --color-brand-purple-light: #6d28d9;
+  --color-brand-purple-dark: #3b1277;
+  --color-brand-purple-soft: #ede9fe;
+  --color-brand-black: #0a0a0a;
+  --color-brand-white: #ffffff;
+
+  /* School accents */
+  --color-accent-gold: #f5b700;
+  --color-accent-green: #15803d;
+  --color-accent-red: #b91c1c;
+
+  /* Semantic */
+  --color-success: #15803d;
+  --color-success-soft: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-error: #b91c1c;
+  --color-error-soft: #fee2e2;
+  --color-info: #1d4ed8;
+  --color-info-soft: #dbeafe;
+
+  /* Neutrals */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+
+  /* ============================================================
+     RADII — sharp edges everywhere, circles still available
+     ============================================================ */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-full: 9999px; /* avatars / pills only */
+
+  /* ============================================================
+     SHADOWS — subtle default, hard offset for accents
+     ============================================================ */
+  --shadow-xs: 0 1px 0 0 rgb(10 10 10 / 0.04);
+  --shadow-sm: 0 2px 0 0 rgb(10 10 10 / 0.05);
+  --shadow-md: 0 4px 0 0 rgb(10 10 10 / 0.06);
+  --shadow-lg: 0 6px 0 0 rgb(10 10 10 / 0.08);
+  --shadow-hard-sm: 2px 2px 0 0 #0a0a0a;
+  --shadow-hard: 4px 4px 0 0 #0a0a0a;
+  --shadow-hard-lg: 6px 6px 0 0 #0a0a0a;
+  --shadow-hard-brand: 4px 4px 0 0 #4c1d95;
+
+  /* ============================================================
+     FONTS
+     ============================================================ */
   --font-display: "Fraunces", serif;
   --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ============================================================
+     EASING / ANIMATION
+     ============================================================ */
+  --ease-sharp: cubic-bezier(0.2, 0, 0, 1);
+  --animate-logo-spin: logo-spin 0.6s var(--ease-sharp);
+  --animate-cta-bounce: cta-bounce 2s ease-in-out infinite;
 }
 
+/* ---- Keyframes ---- */
 @keyframes logo-spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 @keyframes cta-bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -29,10 +101,312 @@
   }
 }
 
+/* Convenience aliases kept for existing markup */
 .logo-spin-hover:hover {
-  animation: logo-spin 0.6s ease-in-out;
+  animation: var(--animate-logo-spin);
+}
+.cta-bounce {
+  animation: var(--animate-cta-bounce);
 }
 
-.cta-bounce {
-  animation: cta-bounce 2s ease-in-out infinite;
+/* ============================================================
+   BASE
+   ============================================================ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-neutral-50 font-body text-brand-black antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-brand-purple text-white;
+  }
+}
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+@layer components {
+  /* ---------- Layout ---------- */
+  .page-container {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* ---------- Navigation ---------- */
+  .nav-link {
+    @apply relative inline-flex items-center gap-2 px-3 py-2 text-sm font-medium
+           text-neutral-600 transition-colors duration-150;
+  }
+  .nav-link:hover {
+    @apply text-brand-purple;
+  }
+  .nav-link[aria-current="page"] {
+    @apply text-brand-black;
+  }
+  .nav-link[aria-current="page"]::after {
+    content: "";
+    @apply absolute inset-x-2 -bottom-px h-0.5 bg-brand-purple;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold
+           transition-all duration-150
+           disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-brand-purple text-white hover:bg-brand-purple-dark;
+  }
+  .btn-outline {
+    @apply border border-neutral-300 bg-white text-neutral-800
+                        hover:border-brand-purple hover:text-brand-purple;
+  }
+  .btn-ghost {
+    @apply text-neutral-700 hover:bg-neutral-100;
+  }
+  .btn-danger {
+    @apply bg-error text-white hover:bg-red-700;
+  }
+  .btn-block {
+    @apply w-full;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* ---------- Cards ---------- */
+  .card {
+    @apply border border-neutral-200 bg-white;
+  }
+
+  /* Executive candidate card:
+     square big photo on top, left-aligned name + position underneath */
+  .executive-card {
+    @apply flex flex-col overflow-hidden border border-neutral-200 bg-white
+           transition-shadow duration-200;
+  }
+  .executive-card:hover {
+    @apply shadow-hard;
+  }
+
+  .executive-card__media {
+    @apply aspect-square w-full overflow-hidden bg-neutral-100;
+  }
+  .executive-card__media img {
+    @apply h-full w-full object-cover transition-transform duration-300;
+  }
+  .executive-card:hover .executive-card__media img {
+    @apply scale-105;
+  }
+
+  .executive-card__body {
+    @apply p-4 text-left;
+  }
+  .executive-card__name {
+    @apply font-display text-lg font-semibold leading-tight text-brand-black;
+  }
+  .executive-card__position {
+    @apply mt-1 text-sm text-neutral-600;
+  }
+  .executive-card__meta {
+    @apply mt-3 flex items-center gap-2 text-xs text-neutral-500;
+  }
+
+  /* ---------- Forms ---------- */
+  .form-field {
+    @apply flex flex-col gap-1.5;
+  }
+  .form-label {
+    @apply text-sm font-medium text-neutral-800;
+  }
+  .form-label .req {
+    @apply text-error;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    @apply w-full border border-neutral-300 bg-white px-3 py-2.5 text-sm text-brand-black
+           outline-none transition-colors duration-150 placeholder:text-neutral-400;
+  }
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    @apply border-brand-purple ring-2 ring-brand-purple/20;
+  }
+  .form-input[aria-invalid="true"],
+  .form-select[aria-invalid="true"],
+  .form-textarea[aria-invalid="true"] {
+    @apply border-error ring-2 ring-error/15;
+  }
+  .form-help {
+    @apply text-xs text-neutral-500;
+  }
+  .form-error {
+    @apply text-xs font-medium text-error;
+  }
+
+  /* ---------- Image upload with preview + deselect ---------- */
+  .image-upload {
+    @apply relative flex cursor-pointer flex-col items-center justify-center gap-2
+           border-2 border-dashed border-neutral-300 bg-neutral-50 p-6 text-center
+           text-sm text-neutral-600 transition-colors duration-150;
+  }
+  .image-upload:hover {
+    @apply border-brand-purple bg-brand-purple-soft/40 text-brand-purple;
+  }
+  .image-upload input[type="file"] {
+    @apply sr-only;
+  }
+
+  .image-upload--filled {
+    @apply border-solid border-neutral-200 bg-white p-0 text-left;
+  }
+
+  .image-upload__preview {
+    @apply relative aspect-square w-full overflow-hidden bg-neutral-100;
+  }
+  .image-upload__preview img {
+    @apply h-full w-full object-cover;
+  }
+
+  .image-upload__remove {
+    @apply absolute right-2 top-2 grid h-8 w-8 place-items-center
+           bg-brand-black text-white transition-colors duration-150 hover:bg-error;
+  }
+  .image-upload__remove svg {
+    @apply h-4 w-4;
+  }
+
+  /* ---------- Badges ---------- */
+  .badge {
+    @apply inline-flex items-center gap-1 border px-2 py-0.5 text-xs font-medium;
+  }
+  .badge-brand {
+    @apply border-brand-purple/30 bg-brand-purple-soft text-brand-purple;
+  }
+  .badge-success {
+    @apply border-success/30 bg-success-soft text-success;
+  }
+  .badge-warning {
+    @apply border-warning/30 bg-warning-soft text-warning;
+  }
+  .badge-error {
+    @apply border-error/30 bg-error-soft text-error;
+  }
+
+  /* ---------- Alerts / Messages ---------- */
+  .alert {
+    @apply flex items-start gap-3 border px-4 py-3 text-sm;
+  }
+  .alert-success {
+    @apply border-success/30 bg-success-soft text-success;
+  }
+  .alert-info {
+    @apply border-info/30    bg-info-soft    text-info;
+  }
+  .alert-warning {
+    @apply border-warning/30 bg-warning-soft text-warning;
+  }
+  .alert-error {
+    @apply border-error/30   bg-error-soft   text-error;
+  }
+
+  /* ---------- Stat card ---------- */
+  .stat-card {
+    @apply flex flex-col gap-1 border border-neutral-200 bg-white p-5;
+  }
+  .stat-card__value {
+    @apply font-display text-3xl font-semibold leading-none text-brand-black;
+  }
+  .stat-card__label {
+    @apply text-xs font-semibold uppercase tracking-wider text-neutral-500;
+  }
+  .stat-card__hint {
+    @apply mt-1 text-xs text-neutral-500;
+  }
+
+  /* ---------- Data table ---------- */
+  .table-wrap {
+    @apply overflow-x-auto border border-neutral-200 bg-white;
+  }
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table thead th {
+    @apply whitespace-nowrap border-b border-neutral-200 bg-neutral-50
+           px-4 py-3 text-xs font-semibold uppercase tracking-wider text-neutral-500;
+  }
+  .table tbody td {
+    @apply border-b border-neutral-100 px-4 py-3 align-middle text-neutral-800;
+  }
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .table tbody tr:hover {
+    @apply bg-neutral-50;
+  }
+  .table-actions {
+    @apply flex items-center justify-end gap-3 whitespace-nowrap text-xs font-medium;
+  }
+  .table-actions a {
+    @apply text-brand-purple hover:underline;
+  }
+  .table-actions .danger {
+    @apply text-error hover:underline;
+  }
+
+  /* On mobile, tables become cards you can swipe horizontally instead of breaking the page */
+  @media (max-width: 639px) {
+    .table-wrap {
+      @apply -mx-4 px-4;
+    }
+    .table thead {
+      display: none;
+    }
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+      display: block;
+      width: 100%;
+    }
+    .table tbody tr {
+      @apply border-b border-neutral-200 px-4 py-3;
+    }
+    .table tbody td {
+      @apply border-0 px-0 py-1;
+    }
+    .table-actions {
+      @apply justify-start;
+    }
+  }
+
+  /* ---------- Page header (admin) ---------- */
+  .page-header {
+    @apply mb-8 flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4;
+  }
+  .page-header__title {
+    @apply font-display text-2xl font-semibold text-brand-black;
+  }
+  .page-header__sub {
+    @apply mt-1 text-sm text-neutral-500;
+  }
+
+  /* ---------- Danger zone ---------- */
+  .danger-zone {
+    @apply border border-error/30 bg-error-soft p-6;
+  }
 }

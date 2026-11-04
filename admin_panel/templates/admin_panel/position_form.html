@@ -3,12 +3,48 @@
 {% block title %}Position · NAIFT Admin{% endblock %}
 
 {% block content %}
-<a href="{% url 'admin_panel:position_list' %}" class="text-brand-purple hover:underline block mb-4">&larr; Back to Positions</a>
-<h1 class="font-display text-3xl text-brand-purple mb-8">{% if object %}Edit{% else %}Add{% endif %} Position</h1>
+<a href="{% url 'admin_panel:position_list' %}"
+   class="mb-4 inline-block text-sm font-medium text-brand-purple hover:underline">
+    ← Back to Positions
+</a>
 
-<form method="post" class="flex flex-col gap-4 max-w-md">
+<div class="page-header">
+    <h1 class="page-header__title">{% if object %}Edit{% else %}Add{% endif %} Position</h1>
+</div>
+
+<form method="post" class="max-w-xl border border-neutral-200 bg-white p-6 sm:p-8">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Save</button>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-error mb-4">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <div class="flex flex-col gap-5">
+        {% for field in form %}
+            <div class="form-field">
+                <label class="form-label" for="{{ field.id_for_label }}">
+                    {{ field.label }}{% if field.field.required %} <span class="req">*</span>{% endif %}
+                </label>
+                {% if field.field.widget.input_type == 'textarea' %}
+                    <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+                              rows="4" class="form-textarea">{{ field.value|default_if_none:"" }}</textarea>
+                {% else %}
+                    <input type="{{ field.field.widget.input_type|default:'text' }}"
+                           name="{{ field.html_name }}"
+                           id="{{ field.id_for_label }}"
+                           value="{{ field.value|default_if_none:'' }}"
+                           class="form-input"
+                           {% if field.field.required %}required{% endif %}>
+                {% endif %}
+                {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<p class="form-error">{{ field.errors.0 }}</p>{% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-6">
+        <a href="{% url 'admin_panel:position_list' %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Position</button>
+    </div>
 </form>
 {% endblock %}

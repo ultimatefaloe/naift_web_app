@@ -3,13 +3,44 @@
 {% block title %}Admin Login · NAIFT{% endblock %}
 
 {% block content %}
-<div class="max-w-sm mx-auto mt-16">
-    <h1 class="font-display text-3xl text-brand-purple mb-6 text-center">Admin Login</h1>
-    <form method="post" class="flex flex-col gap-4">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Username" required class="border border-brand-black/20 rounded px-4 py-2">
-        <input type="password" name="password" placeholder="Password" required class="border border-brand-black/20 rounded px-4 py-2">
-        <button type="submit" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Log in</button>
-    </form>
+<div class="mx-auto max-w-sm py-12">
+    <div class="border border-neutral-200 bg-white p-6 sm:p-8">
+
+        <div class="mb-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Admin access</p>
+            <h1 class="mt-1 font-display text-2xl font-semibold text-brand-black">Sign in</h1>
+            <p class="mt-2 text-sm text-neutral-600">Use your administrator credentials.</p>
+        </div>
+
+        {% if form.non_field_errors or error %}
+            <div class="alert alert-error mb-4">
+                {{ form.non_field_errors.0|default:error }}
+            </div>
+        {% endif %}
+
+        <form method="post" class="flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div class="form-field">
+                <label class="form-label" for="id_username">Username <span class="req">*</span></label>
+                <input id="id_username" type="text" name="username" autocomplete="username"
+                       required class="form-input">
+            </div>
+
+            <div class="form-field">
+                <label class="form-label" for="id_password">Password <span class="req">*</span></label>
+                <input id="id_password" type="password" name="password" autocomplete="current-password"
+                       required class="form-input">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block mt-2">Log in</button>
+        </form>
+
+        <p class="mt-6 text-center text-xs text-neutral-500">
+            <a href="{% url 'core:home' %}" class="text-brand-purple hover:underline">
+                ← Back to public site
+            </a>
+        </p>
+    </div>
 </div>
 {% endblock %}

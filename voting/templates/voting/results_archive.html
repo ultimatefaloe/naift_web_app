@@ -3,15 +3,35 @@
 {% block title %}Past Election Results · NAIFT Voting{% endblock %}
 
 {% block content %}
-<h1 class="font-display text-3xl text-brand-purple mb-8">Past Election Results</h1>
+<div class="mx-auto ">
 
-<ul class="space-y-3">
-    {% for election in elections %}
-        <li>
-            <a href="{% url 'voting:results_detail' election.pk %}" class="text-brand-purple hover:underline font-display text-lg">{{ election.session }}</a>
-        </li>
-    {% empty %}
-        <li>No published election results yet.</li>
-    {% endfor %}
-</ul>
+    <div class="mb-8">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Archive</p>
+        <h1 class="mt-1 font-display text-3xl font-semibold text-brand-black">Past Election Results</h1>
+    </div>
+
+    {% if elections %}
+        <ul class="grid gap-3">
+            {% for election in elections %}
+            <li>
+                <a href="{% url 'voting:results_detail' election.pk %}"
+                   class="group flex items-center justify-between gap-4 border border-neutral-200 bg-white p-4
+                          transition-colors hover:border-brand-purple hover:bg-brand-purple-soft/30">
+                    <div>
+                        <p class="font-display text-lg font-semibold text-brand-black group-hover:text-brand-purple">
+                            {{ election.session }}
+                        </p>
+                        <p class="text-sm text-neutral-500">View full results</p>
+                    </div>
+                    <span class="text-lg text-brand-purple">→</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="border border-neutral-200 bg-white p-8 text-center text-neutral-500">
+            No published election results yet.
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

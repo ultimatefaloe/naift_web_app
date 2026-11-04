@@ -3,37 +3,65 @@
 {% block title %}Executives · NAIFT Admin{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-8">
-    <h1 class="font-display text-3xl text-brand-purple">Executives</h1>
-    <a href="{% url 'admin_panel:executive_create' %}" class="bg-brand-purple text-brand-white px-4 py-2 rounded hover:opacity-90">Add Executive</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-header__title">Executives</h1>
+        <p class="page-header__sub">Current and past student executives.</p>
+    </div>
+    <a href="{% url 'admin_panel:executive_create' %}" class="btn btn-primary">+ Add Executive</a>
 </div>
 
-<table class="w-full text-left border-collapse">
-    <thead>
-        <tr class="border-b border-brand-black/10">
-            <th class="py-2">Name</th>
-            <th class="py-2">Position</th>
-            <th class="py-2">Session</th>
-            <th class="py-2">Current?</th>
-            <th class="py-2"></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for executive in executives %}
-            <tr class="border-b border-brand-black/10">
-                <td class="py-2">{{ executive.name }}</td>
-                <td class="py-2">{{ executive.position }}</td>
-                <td class="py-2">{{ executive.session }}</td>
-                <td class="py-2">{% if executive.is_current %}Yes{% else %}No{% endif %}</td>
-                <td class="py-2 text-right">
-                    <a href="{% url 'admin_panel:executive_update' executive.pk %}" class="text-brand-purple hover:underline">Edit</a>
-                    &middot;
-                    <a href="{% url 'admin_panel:executive_delete' executive.pk %}" class="text-brand-purple hover:underline">Delete</a>
+{% if executives %}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="w-12"></th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Session</th>
+                <th>Current</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for executive in executives %}
+            <tr>
+                <td>
+                    {% if executive.photo %}
+                        <img src="{{ executive.photo.url }}" alt=""
+                             class="h-10 w-10 border border-neutral-200 object-cover">
+                    {% else %}
+                        <div class="grid h-10 w-10 place-items-center bg-neutral-100 font-display text-sm font-semibold text-neutral-400">
+                            {{ executive.name|first|upper }}
+                        </div>
+                    {% endif %}
+                </td>
+                <td class="font-medium text-brand-black">{{ executive.name }}</td>
+                <td>{{ executive.position }}</td>
+                <td class="text-neutral-600">{{ executive.session }}</td>
+                <td>
+                    {% if executive.is_current %}
+                        <span class="badge badge-brand">Current</span>
+                    {% else %}
+                        <span class="text-sm text-neutral-500">Past</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="table-actions">
+                        <a href="{% url 'admin_panel:executive_update' executive.pk %}">Edit</a>
+                        <a href="{% url 'admin_panel:executive_delete' executive.pk %}" class="danger">Delete</a>
+                    </div>
                 </td>
             </tr>
-        {% empty %}
-            <tr><td colspan="5" class="py-4">No executives yet.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="border border-neutral-200 bg-white p-10 text-center">
+    <p class="text-lg text-neutral-700">No executives yet.</p>
+    <a href="{% url 'admin_panel:executive_create' %}" class="btn btn-primary mt-4">+ Add Executive</a>
+</div>
+{% endif %}
 {% endblock %}

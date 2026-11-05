@@ -32,6 +32,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+env_allohost = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+if env_allohost:
+    ALLOWED_HOSTS = env_allohost.split(',')
+
+
 
 # Application definition
 

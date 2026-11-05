@@ -156,8 +156,9 @@ def results_view(request, pk=None):
         election = Election.objects.filter(is_results_published=True).order_by("-id").first()
         if election is None:
             return render(request, "voting/results_not_published.html")
-    # Kept in sync with admin_panel.views.ElectionResultsView's tally query —
-    # update both if the ordering/annotation logic ever changes.
+    # Kept in sync with admin_panel.views.ElectionResultsView's tally query
+    # and admin_panel.views.ElectionResultsPrintView's — update all three if
+    # the ordering/annotation logic ever changes.
     tallies = mark_winners(
         Contestant.objects.filter(election=election)
         .select_related("position")

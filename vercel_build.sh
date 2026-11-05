@@ -2,7 +2,11 @@
 set -e # Stop on any error
 
 echo "Building project packages..."
-python3 -m pip install -r requirements.txt
+# --break-system-packages: Vercel's build image's Python is managed by uv
+# (PEP 668), which blocks a bare `pip install` outside a virtualenv. This
+# build container is thrown away after the build step, so there's no real
+# "system" to protect here.
+python3 -m pip install --break-system-packages -r requirements.txt
 
 echo "Installing tailwindcss and dependencies..."
 python3 manage.py tailwind install

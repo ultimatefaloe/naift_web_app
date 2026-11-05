@@ -144,6 +144,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+# Nested under a "static" subfolder so the deployed output lines up with
+# vercel.json's "/static/(.*)" route — collectstatic dumps everything here,
+# and vercel.json's static-build step publishes this whole directory
+# (distDir: "staticfiles") at the deployment root.
+STATIC_ROOT = BASE_DIR / 'staticfiles' / 'static'
 
 MEDIA_URL = 'media/'
 
@@ -154,6 +159,12 @@ CLOUDINARY_STORAGE = {
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
 }
+
+# django-cloudinary-storage's own `collectstatic` override still reads the
+# legacy pre-6.1 STATICFILES_STORAGE setting directly and crashes with an
+# AttributeError if it's undefined — Django 6.1 itself ignores this in favor
+# of STORAGES below, this is purely a compatibility shim for that package.
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 STORAGES = {
     'default': {

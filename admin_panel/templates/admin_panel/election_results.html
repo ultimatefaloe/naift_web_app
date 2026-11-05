@@ -9,19 +9,35 @@
 </a>
 
 <div class="page-header">
-    <div>
-        <h1 class="page-header__title">{{ election.session }} Results</h1>
-        <p class="page-header__sub flex flex-wrap items-center gap-2">
-            <span class="badge">{{ election.get_status_display }}</span>
-            {% if election.is_results_published %}
-                <a href="{% url 'voting:results_detail' election.pk %}" class="text-brand-purple hover:underline">
-                    View public results →
-                </a>
-            {% else %}
-                <span class="text-neutral-500">Not yet published to the public site.</span>
-            {% endif %}
-        </p>
+    {# ── Title block ── #}
+    <div class="min-w-0 flex-1">
+        <h1 class="page-header__title flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span class="min-w-0 break-words">{{ election.session }} Results</span>
+            <span class="badge shrink-0">{{ election.get_status_display }}</span>
+        </h1>
+
+        {% if not election.is_results_published %}
+            <p class="page-header__sub mt-2">Not yet published to the public site.</p>
+        {% endif %}
     </div>
+
+    {# ── Actions ── #}
+    {% if election.is_results_published %}
+    <div class="flex items-center justify-self-end gap-3">
+        <a href="{% url 'admin_panel:election_results_print' election.pk %}"
+           target="_blank" rel="noopener"
+           class="btn btn-primary justify-center sm:w-auto">
+            <i class="fa fa-print h-4 w-4" aria-hidden="true" class="text-brand-purple-soft"></i>
+            <span>Print Result</span>
+        </a>
+        <a href="{% url 'voting:results_detail' election.pk %}"
+           target="_blank" rel="noopener"
+           class="btn btn-outline justify-center sm:w-auto">
+            <i class="fa fa-eye h-4 w-4" aria-hidden="true" class="text-brand-purple"></i>
+            <span>View public results</span>
+        </a>
+    </div>
+    {% endif %}
 </div>
 
 {% regroup tallies by position as position_list %}

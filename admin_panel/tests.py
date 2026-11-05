@@ -599,6 +599,18 @@ class ElectionResultsViewTests(TestCase):
         self.assertEqual(len(tallies), 1)
         self.assertEqual(tallies[0].vote_count, 0)
 
+    def test_results_view_shows_print_link_when_published(self):
+        self.election.is_results_published = True
+        self.election.save()
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertContains(
+            response, f'href="{reverse("admin_panel:election_results_print", args=[self.election.pk])}"'
+        )
+
+    def test_results_view_hides_print_link_when_not_published(self):
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertNotContains(response, "Print Result")
+
 
 class ElectionActionViewTests(TestCase):
     def setUp(self):

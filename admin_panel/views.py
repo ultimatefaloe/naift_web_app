@@ -323,6 +323,9 @@ class ElectionResultsPrintView(AdminRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Kept in sync with ElectionResultsView's tally query (and
+        # voting.views.results_view) — update all three if the
+        # ordering/annotation logic ever changes.
         context["tallies"] = mark_winners(
             Contestant.objects.filter(election=self.object)
             .select_related("position")

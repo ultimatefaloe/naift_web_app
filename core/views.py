@@ -20,3 +20,7 @@ class AboutView(TemplateView):
 
 class AcademicsView(TemplateView):
     template_name = "core/academics.html"
+
+
+class CreditView(TemplateView):
+    template_name = "core/credit.html"

@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Credit · NAIFT{% endblock %}
+
+{% block content %}
+
+{# ── Page header ── #}
+<section class="border-b border-neutral-200 bg-neutral-50">
+    <div class="page-container py-12" data-aos="fade-up">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand-purple">Credit</p>
+        <h1 class="mt-2 font-display text-4xl font-semibold text-brand-black">
+            System Developer
+        </h1>
+        <p class="mt-3 max-w-2xl text-lg text-neutral-600">
+            The person behind the design and development of this platform.
+        </p>
+    </div>
+</section>
+
+{# ── Body ── #}
+<div class="page-container py-16">
+    <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start" data-aos="fade-up">
+        <img src="{% static 'image/author_image_ultimate.jpeg' %}"
+             alt="Falodun Tunmise"
+             class="h-40 w-40 shrink-0 rounded-full border border-neutral-200 object-cover shadow-hard">
+
+        <div class="text-center sm:text-left">
+            <h2 class="font-display text-2xl font-semibold text-brand-black">Falodun Tunmise</h2>
+            <p class="mt-1 font-medium text-brand-purple">Software Engineer</p>
+            <p class="mt-4 max-w-xl text-lg leading-relaxed text-neutral-700">
+                Designed and built the NAIFT election platform — from the public site and voting
+                dashboard to the admin panel behind it.
+            </p>
+
+            <h3 class="mt-8 text-xs font-semibold uppercase tracking-wider text-brand-purple">Past Roles</h3>
+            <ul class="mt-3 space-y-2 text-neutral-700">
+                <li>Vice-Chairman, Electoral Committee (ELECOM) — 2025/2026</li>
+                <li>Treasurer — 2024/2025</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

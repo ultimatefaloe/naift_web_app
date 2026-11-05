@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     {% tailwind_css %}
 </head>
 <body class="flex min-h-screen flex-col bg-neutral-50 text-brand-black font-body">
@@ -205,6 +206,10 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <footer class="border-t border-neutral-200 py-4 text-center text-xs text-neutral-400">
+        <a href="{% url 'core:credit' %}" class="underline hover:text-neutral-600">System developed by Falodun Tunmise</a>
+    </footer>
 
     {% if user.is_authenticated %}{% include "admin_panel/_mobile_menu_script.html" %}{% endif %}
 </body>

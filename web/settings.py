@@ -99,9 +99,11 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'naift'),
         'PASSWORD': os.environ.get('DB_PASSWORD', ''),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5435'),
-        'SSLMODE': os.environ.get('DB_SSLMODE', 'require'),
-        'CHANNELBINDING': os.environ.get('DB_CHANNELBINDING', 'require'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': os.environ.get('DB_SSLMODE', 'require'),
+            'channel_binding': os.environ.get('DB_CHANNELBINDING', 'require'),
+        },
     }
 }
 

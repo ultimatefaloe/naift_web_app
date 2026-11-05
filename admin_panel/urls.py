@@ -29,6 +29,11 @@ urlpatterns = [
     path("elections/add/", views.ElectionCreateView.as_view(), name="election_create"),
     path("elections/<int:pk>/edit/", views.ElectionUpdateView.as_view(), name="election_update"),
     path("elections/<int:pk>/results/", views.ElectionResultsView.as_view(), name="election_results"),
+    path(
+        "elections/<int:pk>/results/print/",
+        views.ElectionResultsPrintView.as_view(),
+        name="election_results_print",
+    ),
     path("elections/<int:pk>/start/", views.ElectionStartView.as_view(), name="election_start"),
     path("elections/<int:pk>/end/", views.ElectionEndView.as_view(), name="election_end"),
     path(

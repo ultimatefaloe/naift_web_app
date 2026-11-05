@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ election.session }} Results · NAIFT ELECOM</title>
+    <style>
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            color: #111;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border-bottom: 3px double #111;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .header img {
+            height: 72px;
+            width: 72px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .header-text {
+            flex: 1;
+            text-align: center;
+        }
+        .header-text p {
+            margin: 0.15rem 0;
+        }
+        .header-text .org-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .header-text .committee-name {
+            font-size: 1rem;
+        }
+        .header-text .tagline {
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+        h1.doc-title {
+            text-align: center;
+            font-size: 1.3rem;
+            margin: 1.5rem 0;
+            text-decoration: underline;
+        }
+        .position-section {
+            margin-bottom: 1.5rem;
+        }
+        .position-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-bottom: 1px solid #111;
+            margin-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid #ccc;
+        }
+        .winner-row {
+            font-weight: bold;
+        }
+        .print-button {
+            display: block;
+            margin: 0 auto 2rem;
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="print-button" onclick="window.print()">Print</button>
+
+    <div class="header">
+        <img src="{% static 'image/naifts_logo.jpeg' %}" alt="NAIFT logo">
+        <div class="header-text">
+            <p class="org-name">Nigerian Association of Information Technology Students</p>
+            <p class="committee-name">Electoral Committee (ELECOM)</p>
+            <p class="tagline">Result from the Electoral Committee</p>
+        </div>
+        <img src="{% static 'image/ift_logo.jpeg' %}" alt="Department of Information Technology logo">
+    </div>
+
+    <h1 class="doc-title">{{ election.session }} Election Results</h1>
+
+    {% regroup tallies by position as position_list %}
+    {% for position in position_list %}
+        <div class="position-section">
+            <p class="position-title">{{ position.grouper }}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Votes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contestant in position.list %}
+                        <tr class="{% if contestant.is_winner %}winner-row{% endif %}">
+                            <td>
+                                {{ contestant.name }}{% if contestant.alias %} ({{ contestant.alias }}){% endif %}
+                                {% if contestant.is_winner %} &mdash; Winner{% endif %}
+                            </td>
+                            <td>{{ contestant.vote_count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% empty %}
+        <p>No contestants have been added for this election yet.</p>
+    {% endfor %}
+</body>
+</html>

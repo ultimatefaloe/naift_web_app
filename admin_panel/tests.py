@@ -1037,3 +1037,62 @@ class StudentCSVUploadViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Could not read this file as text")
+
+
+class ElectionResultsPrintViewTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_user(username="admin_print_results", password="pass12345")
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.client.force_login(self.admin_user)
+        self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="ended",
+            is_results_published=True,
+            modified_by=self.admin_profile,
+        )
+        self.contestant = Contestant.objects.create(
+            name="Jane Doe", manifesto="Vote for progress.", position=self.position, election=self.election
+        )
+        student = Student.objects.create(
+            first_name="John", last_name="Smith", matric_number="2026/1/00001CF", level="300"
+        )
+        Vote.objects.create(
+            student=student, election=self.election, position=self.position, contestant=self.contestant
+        )
+
+    def test_returns_200_for_published_election(self):
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_panel/election_results_print.html")
+
+    def test_returns_404_for_unpublished_election(self):
+        self.election.is_results_published = False
+        self.election.save()
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_returns_404_for_nonexistent_election(self):
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[999999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_shows_formatted_header_content(self):
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        self.assertContains(response, "Nigerian Association of Information Technology Students")
+        self.assertContains(response, "Electoral Committee (ELECOM)")
+        self.assertContains(response, "Result from the Electoral Committee")
+
+    def test_shows_real_tally_data(self):
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        self.assertContains(response, "President")
+        self.assertContains(response, "Jane Doe")
+        self.assertContains(response, "Winner")
+
+    def test_does_not_extend_admin_base_template(self):
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        # admin_panel/base.html's header always renders a Logout form for an
+        # authenticated admin — its absence here proves this page is genuinely
+        # standalone, not accidentally extending the admin chrome.
+        self.assertNotContains(response, "Logout")

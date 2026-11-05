@@ -313,6 +313,25 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
         return context
 
 
+class ElectionResultsPrintView(AdminRequiredMixin, DetailView):
+    model = Election
+    template_name = "admin_panel/election_results_print.html"
+    context_object_name = "election"
+
+    def get_queryset(self):
+        return Election.objects.filter(is_results_published=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tallies"] = mark_winners(
+            Contestant.objects.filter(election=self.object)
+            .select_related("position")
+            .annotate(vote_count=Count("votes", filter=Q(votes__election=F("election"))))
+            .order_by("position__title", "position_id", "-vote_count")
+        )
+        return context
+
+
 class ElectionStartView(AdminRequiredMixin, View):
     def post(self, request, pk):
         election = get_object_or_404(Election, pk=pk)

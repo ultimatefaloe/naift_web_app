@@ -12,7 +12,7 @@ class AdminRequiredMixin:
             AdminProfile.objects.get_or_create(user=request.user, defaults={"role": None, "is_active": True})
             return super().dispatch(request, *args, **kwargs)
         profile = getattr(request.user, "adminprofile", None)
-        if profile is None or not profile.is_active:
+        if profile is None or not profile.is_active or profile.role is None:
             messages.error(request, "You are not authorized to access the admin dashboard.")
             return redirect("admin_panel:login")
         return super().dispatch(request, *args, **kwargs)

@@ -14,6 +14,12 @@ TEST_STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
+# Test fixtures below use AdminProfile.ROLE_CHAIRMAN for any test class that
+# exercises an Election-lifecycle URL (election_list, election_create,
+# election_update, election_results, election_results_print, election_start,
+# election_end, election_publish_results) — those views are Chairman-gated.
+# Every other test class uses ROLE_MEMBER.
+
 
 class AdminProfileModelTests(TestCase):
     def test_string_representation(self):
@@ -44,6 +50,13 @@ class SuperuserAccessTests(TestCase):
     def test_deactivated_member_is_denied_dashboard_access(self):
         user = User.objects.create_user(username="deactivated_member", password="pass12345")
         AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=False)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
+
+    def test_non_superuser_with_no_role_is_denied_dashboard_access(self):
+        user = User.objects.create_user(username="roleless_demoted", password="pass12345")
+        AdminProfile.objects.create(user=user, role=None, is_active=True)
         self.client.force_login(user)
         response = self.client.get(reverse("admin_panel:dashboard"))
         self.assertRedirects(response, reverse("admin_panel:login"))

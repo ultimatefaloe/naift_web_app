@@ -1371,3 +1371,28 @@ class CommitteeManagementTests(TestCase):
         self.assertTrue(old_chairman_profile.is_active)
         self.assertEqual(old_chairman_profile.role, AdminProfile.ROLE_CHAIRMAN)
         self.assertEqual(current_chairman_profile.role, AdminProfile.ROLE_MEMBER)
+
+
+class AdminRoleFlagsContextProcessorTests(TestCase):
+    def test_member_cannot_see_elections_or_committee_links(self):
+        user = User.objects.create_user(username="nav_member", password="pass12345")
+        AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=True)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertNotContains(response, reverse("admin_panel:election_list"))
+        self.assertNotContains(response, reverse("admin_panel:committee_list"))
+
+    def test_chairman_sees_elections_and_committee_links(self):
+        user = User.objects.create_user(username="nav_chairman", password="pass12345")
+        AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, reverse("admin_panel:election_list"))
+        self.assertContains(response, reverse("admin_panel:committee_list"))
+
+    def test_superuser_sees_elections_and_committee_links(self):
+        user = User.objects.create_superuser(username="nav_super", password="pass12345", email="s@example.com")
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, reverse("admin_panel:election_list"))
+        self.assertContains(response, reverse("admin_panel:committee_list"))

@@ -41,9 +41,16 @@
                 <a href="{% url 'admin_panel:executive_list' %}"
                    class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
                           {% if 'executive' in current %}text-white{% endif %}">Executives</a>
+                {% if can_manage_elections %}
                 <a href="{% url 'admin_panel:election_list' %}"
                    class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
                           {% if 'election' in current %}text-white{% endif %}">Elections</a>
+                {% endif %}
+                {% if can_manage_committee %}
+                <a href="{% url 'admin_panel:committee_list' %}"
+                   class="px-3 py-2 font-medium text-white/70 transition-colors hover:text-white
+                          {% if 'committee' in current %}text-white{% endif %}">Committee</a>
+                {% endif %}
             </nav>
             {% endwith %}
 
@@ -151,6 +158,7 @@
                             Executives
                         </a>
                     </li>
+                    {% if can_manage_elections %}
                     <li>
                         <a href="{% url 'admin_panel:election_list' %}"
                            class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
@@ -162,6 +170,20 @@
                             Elections
                         </a>
                     </li>
+                    {% endif %}
+                    {% if can_manage_committee %}
+                    <li>
+                        <a href="{% url 'admin_panel:committee_list' %}"
+                           class="flex items-center justify-between border-l-2 px-3 py-3 font-medium transition-colors
+                                  {% if 'committee' in current %}
+                                      border-brand-purple bg-white/10 text-white
+                                  {% else %}
+                                      border-transparent text-white/70 hover:bg-white/5 hover:text-white
+                                  {% endif %}">
+                            Committee
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
 
                 <p class="mt-6 px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Site</p>

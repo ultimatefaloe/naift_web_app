@@ -81,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'elections.context_processors.election_status',
+                'admin_panel.context_processors.admin_role_flags',
             ],
         },
     },

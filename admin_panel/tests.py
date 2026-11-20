@@ -969,12 +969,16 @@ class ElectionViewsMemberAccessTests(TestCase):
         self.election.save()
         response = self.client.post(reverse("admin_panel:election_end", args=[self.election.pk]))
         self.assertRedirects(response, reverse("admin_panel:dashboard"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "ongoing")
 
     def test_member_cannot_publish_results(self):
         self.election.status = "ended"
         self.election.save()
         response = self.client.post(reverse("admin_panel:election_publish_results", args=[self.election.pk]))
         self.assertRedirects(response, reverse("admin_panel:dashboard"))
+        self.election.refresh_from_db()
+        self.assertFalse(self.election.is_results_published)
 
     def test_chairman_can_view_election_list(self):
         chairman_user = User.objects.create_user(username="chairman_allowed", password="pass12345")

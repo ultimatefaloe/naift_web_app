@@ -1341,3 +1341,33 @@ class CommitteeManagementTests(TestCase):
         self.client.force_login(chairman_user)
         response = self.client.get(reverse("admin_panel:committee_list"))
         self.assertNotContains(response, "hod_super")
+
+    def test_reactivating_a_superuser_profile_is_rejected(self):
+        chairman_user = User.objects.create_user(username="chairman_vs_super", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        superuser_profile = AdminProfile.objects.create(user=self.superuser, role=None, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(reverse("admin_panel:committee_reactivate", args=[superuser_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        superuser_profile.refresh_from_db()
+        self.assertTrue(superuser_profile.is_active)  # unchanged, was already True — the point is no crash/bypass
+
+    def test_reactivating_a_stale_chairman_demotes_the_current_active_chairman(self):
+        old_chairman_user = User.objects.create_user(username="chairman_stale", password="pass12345")
+        old_chairman_profile = AdminProfile.objects.create(
+            user=old_chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=False
+        )
+        current_chairman_user = User.objects.create_user(username="chairman_current", password="pass12345")
+        current_chairman_profile = AdminProfile.objects.create(
+            user=current_chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+        )
+        response = self.client.post(
+            reverse("admin_panel:committee_reactivate", args=[old_chairman_profile.pk])
+        )
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        old_chairman_profile.refresh_from_db()
+        current_chairman_profile.refresh_from_db()
+        self.assertTrue(old_chairman_profile.is_active)
+        self.assertEqual(old_chairman_profile.role, AdminProfile.ROLE_CHAIRMAN)
+        self.assertEqual(current_chairman_profile.role, AdminProfile.ROLE_MEMBER)

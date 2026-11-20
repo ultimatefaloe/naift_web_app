@@ -427,8 +427,9 @@ class MemberCreateView(ChairmanOrAboveRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        AdminProfile.objects.create(user=self.object, role=AdminProfile.ROLE_MEMBER, is_active=True)
+        with transaction.atomic():
+            response = super().form_valid(form)
+            AdminProfile.objects.create(user=self.object, role=AdminProfile.ROLE_MEMBER, is_active=True)
         messages.success(self.request, f"{self.object.username} added as an ELECOM Member.")
         return response
 
@@ -454,10 +455,18 @@ class AdminDeactivateView(ChairmanOrAboveRequiredMixin, View):
 class AdminReactivateView(ChairmanOrAboveRequiredMixin, View):
     def post(self, request, pk):
         profile = get_object_or_404(AdminProfile, pk=pk)
+        if profile.role is None:
+            messages.error(request, "Superuser accounts cannot be managed here.")
+            return redirect("admin_panel:committee_list")
         if profile.role == AdminProfile.ROLE_CHAIRMAN and not request.user.is_superuser:
             messages.error(request, "Only a Superuser can reactivate a Chairman.")
             return redirect("admin_panel:committee_list")
-        profile.is_active = True
-        profile.save()
+        with transaction.atomic():
+            if profile.role == AdminProfile.ROLE_CHAIRMAN:
+                AdminProfile.objects.filter(
+                    role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+                ).exclude(pk=profile.pk).update(role=AdminProfile.ROLE_MEMBER)
+            profile.is_active = True
+            profile.save()
         messages.success(request, f"{profile.user.username} has been reactivated.")
         return redirect("admin_panel:committee_list")

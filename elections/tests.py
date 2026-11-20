@@ -13,7 +13,7 @@ from .results import mark_winners
 class PositionModelTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin1", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
 
     def test_string_representation(self):
         position = Position.objects.create(title="President", modified_by=self.admin_profile)
@@ -33,7 +33,7 @@ class PositionModelTests(TestCase):
 class ContestantModelTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin3", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         self.position = Position.objects.create(title="President", modified_by=admin_profile)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -74,7 +74,7 @@ class ContestantModelTests(TestCase):
 class ElectionModelTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin2", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
 
     def test_string_representation(self):
         election = Election.objects.create(
@@ -119,7 +119,7 @@ class ElectionModelTests(TestCase):
 class MarkWinnersTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_markwinners", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
         self.election = Election.objects.create(
             session="2026/2027",
             start_time="2026-11-01T09:00:00Z",
@@ -254,7 +254,7 @@ from .context_processors import election_status
 class ElectionStatusContextProcessorTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_election_status", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
 
     def test_false_when_no_elections_exist(self):
         self.assertFalse(election_status(None)["voting_is_open"])

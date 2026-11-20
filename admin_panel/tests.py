@@ -18,15 +18,42 @@ TEST_STORAGES = {
 class AdminProfileModelTests(TestCase):
     def test_string_representation(self):
         user = User.objects.create_user(username="admin1", password="pass12345")
-        profile = AdminProfile.objects.create(user=user, is_admin=True)
+        profile = AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.assertEqual(str(profile), "admin1")
+
+    def test_role_and_is_active_default_values(self):
+        user = User.objects.create_user(username="admin_defaults", password="pass12345")
+        profile = AdminProfile.objects.create(user=user)
+        self.assertIsNone(profile.role)
+        self.assertTrue(profile.is_active)
+
+
+class SuperuserAccessTests(TestCase):
+    def test_superuser_gets_adminprofile_auto_created_on_first_dashboard_visit(self):
+        superuser = User.objects.create_superuser(
+            username="dev_super", password="pass12345", email="dev@example.com"
+        )
+        self.assertFalse(AdminProfile.objects.filter(user=superuser).exists())
+        self.client.force_login(superuser)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        profile = AdminProfile.objects.get(user=superuser)
+        self.assertIsNone(profile.role)
+        self.assertTrue(profile.is_active)
+
+    def test_deactivated_member_is_denied_dashboard_access(self):
+        user = User.objects.create_user(username="deactivated_member", password="pass12345")
+        AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=False)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
 
 
 class DashboardAccessTests(TestCase):
     def setUp(self):
         self.non_admin = User.objects.create_user(username="student1", password="pass12345")
         self.admin_user = User.objects.create_user(username="admin4", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
 
     def test_unauthenticated_user_redirected_to_login(self):
         response = self.client.get(reverse("admin_panel:dashboard"))
@@ -54,7 +81,7 @@ class DashboardAccessTests(TestCase):
 class DashboardStatisticsTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_dashboard_stats", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_no_ongoing_election_has_no_chart_positions(self):
@@ -181,7 +208,7 @@ class DashboardStatisticsTests(TestCase):
 class DashboardChartRenderingTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_dashboard_chart", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_no_ongoing_election_shows_message_and_no_canvas(self):
@@ -219,7 +246,7 @@ class DashboardChartRenderingTests(TestCase):
 class LoginViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin5", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
 
     def test_valid_credentials_log_the_user_in(self):
         response = self.client.post(
@@ -240,7 +267,7 @@ class LoginViewTests(TestCase):
 class PositionCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin6", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -274,7 +301,7 @@ class PositionCRUDTests(TestCase):
 class ContestantCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin7", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(
@@ -369,7 +396,7 @@ class ContestantCRUDTests(TestCase):
 class ExecutiveCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin8", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -390,7 +417,7 @@ class ExecutiveCRUDTests(TestCase):
 class ExecutiveCreateTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin8b", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_create_executive(self):
@@ -416,7 +443,7 @@ class ExecutiveCreateTests(TestCase):
 class ElectionCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin9", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -475,7 +502,7 @@ class ElectionCRUDTests(TestCase):
 class ElectionResultsViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin10", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(
@@ -615,7 +642,7 @@ class ElectionResultsViewTests(TestCase):
 class ElectionActionViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin11", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -631,7 +658,7 @@ class ElectionActionViewTests(TestCase):
 
     def test_start_transitions_upcoming_to_ongoing_and_sets_modified_by(self):
         other_user = User.objects.create_user(username="admin12", password="pass12345")
-        other_profile = AdminProfile.objects.create(user=other_user, is_admin=True)
+        other_profile = AdminProfile.objects.create(user=other_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.election.modified_by = other_profile
         self.election.save()
 
@@ -684,7 +711,7 @@ class ElectionActionViewTests(TestCase):
         self.election.is_results_published = True
         self.election.save()
         other_user = User.objects.create_user(username="admin13", password="pass12345")
-        other_profile = AdminProfile.objects.create(user=other_user, is_admin=True)
+        other_profile = AdminProfile.objects.create(user=other_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.election.modified_by = other_profile
         self.election.save()
 
@@ -701,7 +728,7 @@ class ElectionActionViewTests(TestCase):
 class AdminFormBackLinkTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_backlinks", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_position_form_links_back_to_position_list(self):
@@ -749,7 +776,7 @@ class AdminFormBackLinkTests(TestCase):
 class ContestantListFilterTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_contestant_filter", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.election_a = Election.objects.create(
             session="2026/2027",
@@ -823,7 +850,7 @@ class ContestantListFilterTests(TestCase):
 class AdminNavTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_nav", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_nav_includes_public_site_link(self):
@@ -843,7 +870,7 @@ class AdminNavTests(TestCase):
 class ElectionActionModalTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_action_modal", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_start_voting_button_uses_modal_not_native_confirm(self):
@@ -884,7 +911,7 @@ class ElectionActionModalTests(TestCase):
 class StudentCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_crud", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -945,7 +972,7 @@ class StudentCRUDTests(TestCase):
 class StudentListFilterTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_filter", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
         Student.objects.create(first_name="Amina", last_name="Bello", matric_number="2026/1/00001CF", level="300")
         Student.objects.create(first_name="John", last_name="Roe", matric_number="2026/1/00002CF", level="200")
@@ -991,7 +1018,7 @@ class StudentListFilterTests(TestCase):
 class StudentCSVUploadViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_csv", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_uploading_csv_creates_new_student(self):
@@ -1054,7 +1081,7 @@ class StudentCSVUploadViewTests(TestCase):
 class ElectionResultsPrintViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_print_results", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(

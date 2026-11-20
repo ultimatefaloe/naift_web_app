@@ -921,6 +921,70 @@ class ElectionActionModalTests(TestCase):
         self.assertContains(response, f'data-confirm-form="election-publish-results-{election.pk}"')
 
 
+class ElectionViewsMemberAccessTests(TestCase):
+    def setUp(self):
+        self.member_user = User.objects.create_user(username="member_blocked", password="pass12345")
+        self.member_profile = AdminProfile.objects.create(
+            user=self.member_user, role=AdminProfile.ROLE_MEMBER, is_active=True
+        )
+        self.client.force_login(self.member_user)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="upcoming",
+            modified_by=self.member_profile,
+        )
+
+    def test_member_cannot_view_election_list(self):
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_create_election(self):
+        response = self.client.get(reverse("admin_panel:election_create"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_update_election(self):
+        response = self.client.get(reverse("admin_panel:election_update", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_view_election_results(self):
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_view_results_print(self):
+        self.election.is_results_published = True
+        self.election.save()
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_start_election(self):
+        response = self.client.post(reverse("admin_panel:election_start", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "upcoming")
+
+    def test_member_cannot_end_election(self):
+        self.election.status = "ongoing"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_end", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_publish_results(self):
+        self.election.status = "ended"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_publish_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_chairman_can_view_election_list(self):
+        chairman_user = User.objects.create_user(username="chairman_allowed", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertEqual(response.status_code, 200)
+
+
 class StudentCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_crud", password="pass12345")

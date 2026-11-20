@@ -14,7 +14,7 @@ from executives.models import Executive
 from voting.csv_import import import_students
 from voting.models import Student
 from .forms import ElectionForm
-from .mixins import AdminRequiredMixin
+from .mixins import AdminRequiredMixin, ChairmanOrAboveRequiredMixin
 
 
 def login_view(request):
@@ -267,13 +267,13 @@ class StudentCSVUploadView(AdminRequiredMixin, View):
         return redirect("admin_panel:student_list")
 
 
-class ElectionListView(AdminRequiredMixin, ListView):
+class ElectionListView(ChairmanOrAboveRequiredMixin, ListView):
     model = Election
     template_name = "admin_panel/election_list.html"
     context_object_name = "elections"
 
 
-class ElectionCreateView(AdminRequiredMixin, CreateView):
+class ElectionCreateView(ChairmanOrAboveRequiredMixin, CreateView):
     model = Election
     form_class = ElectionForm
     template_name = "admin_panel/election_form.html"
@@ -284,7 +284,7 @@ class ElectionCreateView(AdminRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class ElectionUpdateView(AdminRequiredMixin, UpdateView):
+class ElectionUpdateView(ChairmanOrAboveRequiredMixin, UpdateView):
     model = Election
     form_class = ElectionForm
     template_name = "admin_panel/election_form.html"
@@ -295,7 +295,7 @@ class ElectionUpdateView(AdminRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class ElectionResultsView(AdminRequiredMixin, DetailView):
+class ElectionResultsView(ChairmanOrAboveRequiredMixin, DetailView):
     model = Election
     template_name = "admin_panel/election_results.html"
     context_object_name = "election"
@@ -314,7 +314,7 @@ class ElectionResultsView(AdminRequiredMixin, DetailView):
         return context
 
 
-class ElectionResultsPrintView(AdminRequiredMixin, DetailView):
+class ElectionResultsPrintView(ChairmanOrAboveRequiredMixin, DetailView):
     model = Election
     template_name = "admin_panel/election_results_print.html"
     context_object_name = "election"
@@ -336,7 +336,7 @@ class ElectionResultsPrintView(AdminRequiredMixin, DetailView):
         return context
 
 
-class ElectionStartView(AdminRequiredMixin, View):
+class ElectionStartView(ChairmanOrAboveRequiredMixin, View):
     def post(self, request, pk):
         election = get_object_or_404(Election, pk=pk)
         if election.status != Election.STATUS_UPCOMING:
@@ -348,7 +348,7 @@ class ElectionStartView(AdminRequiredMixin, View):
         return redirect("admin_panel:election_list")
 
 
-class ElectionEndView(AdminRequiredMixin, View):
+class ElectionEndView(ChairmanOrAboveRequiredMixin, View):
     def post(self, request, pk):
         election = get_object_or_404(Election, pk=pk)
         if election.status != Election.STATUS_ONGOING:
@@ -360,7 +360,7 @@ class ElectionEndView(AdminRequiredMixin, View):
         return redirect("admin_panel:election_list")
 
 
-class ElectionPublishResultsView(AdminRequiredMixin, View):
+class ElectionPublishResultsView(ChairmanOrAboveRequiredMixin, View):
     def post(self, request, pk):
         election = get_object_or_404(Election, pk=pk)
         if election.status != Election.STATUS_ENDED or election.is_results_published:

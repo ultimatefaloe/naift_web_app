@@ -33,3 +33,14 @@ class ChairmanOrAboveRequiredMixin:
             messages.error(request, "You are not authorized to access this page.")
             return redirect("admin_panel:dashboard")
         return super().dispatch(request, *args, **kwargs)
+
+
+class SuperuserRequiredMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect("admin_panel:login")
+        if not request.user.is_superuser:
+            messages.error(request, "You are not authorized to access this page.")
+            return redirect("admin_panel:dashboard")
+        AdminProfile.objects.get_or_create(user=request.user, defaults={"role": None, "is_active": True})
+        return super().dispatch(request, *args, **kwargs)

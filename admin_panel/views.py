@@ -2,6 +2,8 @@ import csv
 
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib import messages
+from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Count, F, ProtectedError, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -13,8 +15,9 @@ from elections.results import mark_winners
 from executives.models import Executive
 from voting.csv_import import import_students
 from voting.models import Student
-from .forms import ElectionForm
-from .mixins import AdminRequiredMixin, ChairmanOrAboveRequiredMixin
+from .forms import AdminAccountCreateForm, ElectionForm
+from .mixins import AdminRequiredMixin, ChairmanOrAboveRequiredMixin, SuperuserRequiredMixin
+from .models import AdminProfile
 
 
 def login_view(request):
@@ -370,3 +373,91 @@ class ElectionPublishResultsView(ChairmanOrAboveRequiredMixin, View):
         election.modified_by = request.user.adminprofile
         election.save()
         return redirect("admin_panel:election_list")
+
+
+class CommitteeListView(ChairmanOrAboveRequiredMixin, TemplateView):
+    template_name = "admin_panel/committee_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["chairmen"] = (
+            AdminProfile.objects.filter(role=AdminProfile.ROLE_CHAIRMAN)
+            .select_related("user")
+            .order_by("user__username")
+        )
+        context["members"] = (
+            AdminProfile.objects.filter(role=AdminProfile.ROLE_MEMBER)
+            .select_related("user")
+            .order_by("user__username")
+        )
+        if self.request.user.is_superuser:
+            context["superusers"] = User.objects.filter(is_superuser=True).order_by("username")
+        return context
+
+
+class ChairmanCreateView(SuperuserRequiredMixin, CreateView):
+    form_class = AdminAccountCreateForm
+    template_name = "admin_panel/committee_admin_form.html"
+    success_url = reverse_lazy("admin_panel:committee_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["role_label"] = "Chairman"
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            response = super().form_valid(form)
+            AdminProfile.objects.filter(role=AdminProfile.ROLE_CHAIRMAN, is_active=True).update(
+                role=AdminProfile.ROLE_MEMBER
+            )
+            AdminProfile.objects.create(user=self.object, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        messages.success(self.request, f"{self.object.username} is now the ELECOM Chairman.")
+        return response
+
+
+class MemberCreateView(ChairmanOrAboveRequiredMixin, CreateView):
+    form_class = AdminAccountCreateForm
+    template_name = "admin_panel/committee_admin_form.html"
+    success_url = reverse_lazy("admin_panel:committee_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["role_label"] = "Member"
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        AdminProfile.objects.create(user=self.object, role=AdminProfile.ROLE_MEMBER, is_active=True)
+        messages.success(self.request, f"{self.object.username} added as an ELECOM Member.")
+        return response
+
+
+class AdminDeactivateView(ChairmanOrAboveRequiredMixin, View):
+    def post(self, request, pk):
+        profile = get_object_or_404(AdminProfile, pk=pk)
+        if profile.user_id == request.user.id:
+            messages.error(request, "You cannot deactivate your own account.")
+            return redirect("admin_panel:committee_list")
+        if profile.role is None:
+            messages.error(request, "Superuser accounts cannot be managed here.")
+            return redirect("admin_panel:committee_list")
+        if profile.role == AdminProfile.ROLE_CHAIRMAN and not request.user.is_superuser:
+            messages.error(request, "Only a Superuser can deactivate a Chairman.")
+            return redirect("admin_panel:committee_list")
+        profile.is_active = False
+        profile.save()
+        messages.success(request, f"{profile.user.username} has been deactivated.")
+        return redirect("admin_panel:committee_list")
+
+
+class AdminReactivateView(ChairmanOrAboveRequiredMixin, View):
+    def post(self, request, pk):
+        profile = get_object_or_404(AdminProfile, pk=pk)
+        if profile.role == AdminProfile.ROLE_CHAIRMAN and not request.user.is_superuser:
+            messages.error(request, "Only a Superuser can reactivate a Chairman.")
+            return redirect("admin_panel:committee_list")
+        profile.is_active = True
+        profile.save()
+        messages.success(request, f"{profile.user.username} has been reactivated.")
+        return redirect("admin_panel:committee_list")

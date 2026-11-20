@@ -1216,3 +1216,128 @@ class ElectionResultsPrintViewTests(TestCase):
         # authenticated admin — its absence here proves this page is genuinely
         # standalone, not accidentally extending the admin chrome.
         self.assertNotContains(response, "Logout")
+
+
+class CommitteeManagementTests(TestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(
+            username="hod_super", password="pass12345", email="hod@example.com"
+        )
+        self.client.force_login(self.superuser)
+
+    def test_superuser_creates_first_chairman(self):
+        response = self.client.post(
+            reverse("admin_panel:committee_add_chairman"),
+            {
+                "username": "chairman_one",
+                "email": "chairman1@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        profile = AdminProfile.objects.get(user__username="chairman_one")
+        self.assertEqual(profile.role, AdminProfile.ROLE_CHAIRMAN)
+        self.assertTrue(profile.is_active)
+
+    def test_creating_new_chairman_demotes_previous_chairman_to_member(self):
+        old_chairman_user = User.objects.create_user(username="chairman_old", password="pass12345")
+        old_chairman_profile = AdminProfile.objects.create(
+            user=old_chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+        )
+        self.client.post(
+            reverse("admin_panel:committee_add_chairman"),
+            {
+                "username": "chairman_new",
+                "email": "chairman2@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        old_chairman_profile.refresh_from_db()
+        self.assertEqual(old_chairman_profile.role, AdminProfile.ROLE_MEMBER)
+        self.assertTrue(old_chairman_profile.is_active)
+        new_chairman_profile = AdminProfile.objects.get(user__username="chairman_new")
+        self.assertEqual(new_chairman_profile.role, AdminProfile.ROLE_CHAIRMAN)
+
+    def test_chairman_creates_member(self):
+        chairman_user = User.objects.create_user(username="chairman_active", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(
+            reverse("admin_panel:committee_add_member"),
+            {
+                "username": "member_one",
+                "email": "member1@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        profile = AdminProfile.objects.get(user__username="member_one")
+        self.assertEqual(profile.role, AdminProfile.ROLE_MEMBER)
+
+    def test_member_cannot_create_chairman(self):
+        member_user = User.objects.create_user(username="member_blocked2", password="pass12345")
+        AdminProfile.objects.create(user=member_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
+        self.client.logout()
+        self.client.force_login(member_user)
+        response = self.client.get(reverse("admin_panel:committee_add_chairman"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_chairman_cannot_create_chairman(self):
+        chairman_user = User.objects.create_user(username="chairman_cant_promote", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.get(reverse("admin_panel:committee_add_chairman"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_chairman_deactivates_any_member(self):
+        chairman_user = User.objects.create_user(username="chairman_deactivator", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        member_user = User.objects.create_user(username="member_to_deactivate", password="pass12345")
+        member_profile = AdminProfile.objects.create(
+            user=member_user, role=AdminProfile.ROLE_MEMBER, is_active=True
+        )
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(reverse("admin_panel:committee_deactivate", args=[member_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        member_profile.refresh_from_db()
+        self.assertFalse(member_profile.is_active)
+
+    def test_chairman_cannot_deactivate_self(self):
+        chairman_user = User.objects.create_user(username="chairman_self", password="pass12345")
+        chairman_profile = AdminProfile.objects.create(
+            user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+        )
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(reverse("admin_panel:committee_deactivate", args=[chairman_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        chairman_profile.refresh_from_db()
+        self.assertTrue(chairman_profile.is_active)
+
+    def test_deactivated_member_can_be_reactivated(self):
+        member_user = User.objects.create_user(username="member_reactivate", password="pass12345")
+        member_profile = AdminProfile.objects.create(
+            user=member_user, role=AdminProfile.ROLE_MEMBER, is_active=False
+        )
+        response = self.client.post(reverse("admin_panel:committee_reactivate", args=[member_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        member_profile.refresh_from_db()
+        self.assertTrue(member_profile.is_active)
+
+    def test_committee_list_shows_superuser_section_to_superuser(self):
+        response = self.client.get(reverse("admin_panel:committee_list"))
+        self.assertContains(response, "hod_super")
+
+    def test_committee_list_hides_superuser_section_from_chairman(self):
+        chairman_user = User.objects.create_user(username="chairman_viewer", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.get(reverse("admin_panel:committee_list"))
+        self.assertNotContains(response, "hod_super")

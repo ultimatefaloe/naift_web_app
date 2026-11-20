@@ -24,7 +24,13 @@ class Migration(migrations.Migration):
             field=models.BooleanField(default=True),
         ),
         migrations.RunSQL(
-            sql="UPDATE admin_panel_adminprofile SET role = 'member', is_active = is_admin;",
+            sql="""
+                UPDATE admin_panel_adminprofile ap
+                SET role = CASE WHEN au.is_superuser THEN NULL ELSE 'member' END,
+                    is_active = ap.is_admin
+                FROM auth_user au
+                WHERE au.id = ap.user_id;
+            """,
             reverse_sql="UPDATE admin_panel_adminprofile SET role = NULL;",
         ),
         migrations.RemoveField(

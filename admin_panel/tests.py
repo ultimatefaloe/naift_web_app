@@ -14,19 +14,59 @@ TEST_STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
+# Test fixtures below use AdminProfile.ROLE_CHAIRMAN for any test class that
+# exercises an Election-lifecycle URL (election_list, election_create,
+# election_update, election_results, election_results_print, election_start,
+# election_end, election_publish_results) — those views are Chairman-gated.
+# Every other test class uses ROLE_MEMBER.
+
 
 class AdminProfileModelTests(TestCase):
     def test_string_representation(self):
         user = User.objects.create_user(username="admin1", password="pass12345")
-        profile = AdminProfile.objects.create(user=user, is_admin=True)
+        profile = AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.assertEqual(str(profile), "admin1")
+
+    def test_role_and_is_active_default_values(self):
+        user = User.objects.create_user(username="admin_defaults", password="pass12345")
+        profile = AdminProfile.objects.create(user=user)
+        self.assertIsNone(profile.role)
+        self.assertTrue(profile.is_active)
+
+
+class SuperuserAccessTests(TestCase):
+    def test_superuser_gets_adminprofile_auto_created_on_first_dashboard_visit(self):
+        superuser = User.objects.create_superuser(
+            username="dev_super", password="pass12345", email="dev@example.com"
+        )
+        self.assertFalse(AdminProfile.objects.filter(user=superuser).exists())
+        self.client.force_login(superuser)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        profile = AdminProfile.objects.get(user=superuser)
+        self.assertIsNone(profile.role)
+        self.assertTrue(profile.is_active)
+
+    def test_deactivated_member_is_denied_dashboard_access(self):
+        user = User.objects.create_user(username="deactivated_member", password="pass12345")
+        AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=False)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
+
+    def test_non_superuser_with_no_role_is_denied_dashboard_access(self):
+        user = User.objects.create_user(username="roleless_demoted", password="pass12345")
+        AdminProfile.objects.create(user=user, role=None, is_active=True)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertRedirects(response, reverse("admin_panel:login"))
 
 
 class DashboardAccessTests(TestCase):
     def setUp(self):
         self.non_admin = User.objects.create_user(username="student1", password="pass12345")
         self.admin_user = User.objects.create_user(username="admin4", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
 
     def test_unauthenticated_user_redirected_to_login(self):
         response = self.client.get(reverse("admin_panel:dashboard"))
@@ -54,7 +94,7 @@ class DashboardAccessTests(TestCase):
 class DashboardStatisticsTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_dashboard_stats", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_no_ongoing_election_has_no_chart_positions(self):
@@ -181,7 +221,7 @@ class DashboardStatisticsTests(TestCase):
 class DashboardChartRenderingTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_dashboard_chart", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_no_ongoing_election_shows_message_and_no_canvas(self):
@@ -219,7 +259,7 @@ class DashboardChartRenderingTests(TestCase):
 class LoginViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin5", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
 
     def test_valid_credentials_log_the_user_in(self):
         response = self.client.post(
@@ -240,7 +280,7 @@ class LoginViewTests(TestCase):
 class PositionCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin6", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -274,7 +314,7 @@ class PositionCRUDTests(TestCase):
 class ContestantCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin7", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(
@@ -369,7 +409,7 @@ class ContestantCRUDTests(TestCase):
 class ExecutiveCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin8", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -390,7 +430,7 @@ class ExecutiveCRUDTests(TestCase):
 class ExecutiveCreateTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin8b", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_create_executive(self):
@@ -416,7 +456,7 @@ class ExecutiveCreateTests(TestCase):
 class ElectionCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin9", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -475,7 +515,7 @@ class ElectionCRUDTests(TestCase):
 class ElectionResultsViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin10", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(
@@ -615,7 +655,7 @@ class ElectionResultsViewTests(TestCase):
 class ElectionActionViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin11", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -631,7 +671,7 @@ class ElectionActionViewTests(TestCase):
 
     def test_start_transitions_upcoming_to_ongoing_and_sets_modified_by(self):
         other_user = User.objects.create_user(username="admin12", password="pass12345")
-        other_profile = AdminProfile.objects.create(user=other_user, is_admin=True)
+        other_profile = AdminProfile.objects.create(user=other_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.election.modified_by = other_profile
         self.election.save()
 
@@ -684,7 +724,7 @@ class ElectionActionViewTests(TestCase):
         self.election.is_results_published = True
         self.election.save()
         other_user = User.objects.create_user(username="admin13", password="pass12345")
-        other_profile = AdminProfile.objects.create(user=other_user, is_admin=True)
+        other_profile = AdminProfile.objects.create(user=other_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.election.modified_by = other_profile
         self.election.save()
 
@@ -701,7 +741,7 @@ class ElectionActionViewTests(TestCase):
 class AdminFormBackLinkTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_backlinks", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_position_form_links_back_to_position_list(self):
@@ -749,7 +789,7 @@ class AdminFormBackLinkTests(TestCase):
 class ContestantListFilterTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_contestant_filter", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.election_a = Election.objects.create(
             session="2026/2027",
@@ -823,7 +863,7 @@ class ContestantListFilterTests(TestCase):
 class AdminNavTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_nav", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_nav_includes_public_site_link(self):
@@ -843,7 +883,7 @@ class AdminNavTests(TestCase):
 class ElectionActionModalTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_action_modal", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_start_voting_button_uses_modal_not_native_confirm(self):
@@ -881,10 +921,78 @@ class ElectionActionModalTests(TestCase):
         self.assertContains(response, f'data-confirm-form="election-publish-results-{election.pk}"')
 
 
+class ElectionViewsMemberAccessTests(TestCase):
+    def setUp(self):
+        self.member_user = User.objects.create_user(username="member_blocked", password="pass12345")
+        self.member_profile = AdminProfile.objects.create(
+            user=self.member_user, role=AdminProfile.ROLE_MEMBER, is_active=True
+        )
+        self.client.force_login(self.member_user)
+        self.election = Election.objects.create(
+            session="2026/2027",
+            start_time="2026-11-01T09:00:00Z",
+            close_time="2026-11-01T17:00:00Z",
+            status="upcoming",
+            modified_by=self.member_profile,
+        )
+
+    def test_member_cannot_view_election_list(self):
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_create_election(self):
+        response = self.client.get(reverse("admin_panel:election_create"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_update_election(self):
+        response = self.client.get(reverse("admin_panel:election_update", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_view_election_results(self):
+        response = self.client.get(reverse("admin_panel:election_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_view_results_print(self):
+        self.election.is_results_published = True
+        self.election.save()
+        response = self.client.get(reverse("admin_panel:election_results_print", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_member_cannot_start_election(self):
+        response = self.client.post(reverse("admin_panel:election_start", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "upcoming")
+
+    def test_member_cannot_end_election(self):
+        self.election.status = "ongoing"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_end", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+        self.election.refresh_from_db()
+        self.assertEqual(self.election.status, "ongoing")
+
+    def test_member_cannot_publish_results(self):
+        self.election.status = "ended"
+        self.election.save()
+        response = self.client.post(reverse("admin_panel:election_publish_results", args=[self.election.pk]))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+        self.election.refresh_from_db()
+        self.assertFalse(self.election.is_results_published)
+
+    def test_chairman_can_view_election_list(self):
+        chairman_user = User.objects.create_user(username="chairman_allowed", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.get(reverse("admin_panel:election_list"))
+        self.assertEqual(response.status_code, 200)
+
+
 class StudentCRUDTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_crud", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_list_view_returns_200(self):
@@ -945,7 +1053,7 @@ class StudentCRUDTests(TestCase):
 class StudentListFilterTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_filter", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
         Student.objects.create(first_name="Amina", last_name="Bello", matric_number="2026/1/00001CF", level="300")
         Student.objects.create(first_name="John", last_name="Roe", matric_number="2026/1/00002CF", level="200")
@@ -991,7 +1099,7 @@ class StudentListFilterTests(TestCase):
 class StudentCSVUploadViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_student_csv", password="pass12345")
-        AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
         self.client.force_login(self.admin_user)
 
     def test_uploading_csv_creates_new_student(self):
@@ -1054,7 +1162,7 @@ class StudentCSVUploadViewTests(TestCase):
 class ElectionResultsPrintViewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(username="admin_print_results", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=self.admin_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
         self.client.force_login(self.admin_user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(
@@ -1108,3 +1216,183 @@ class ElectionResultsPrintViewTests(TestCase):
         # authenticated admin — its absence here proves this page is genuinely
         # standalone, not accidentally extending the admin chrome.
         self.assertNotContains(response, "Logout")
+
+
+class CommitteeManagementTests(TestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(
+            username="hod_super", password="pass12345", email="hod@example.com"
+        )
+        self.client.force_login(self.superuser)
+
+    def test_superuser_creates_first_chairman(self):
+        response = self.client.post(
+            reverse("admin_panel:committee_add_chairman"),
+            {
+                "username": "chairman_one",
+                "email": "chairman1@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        profile = AdminProfile.objects.get(user__username="chairman_one")
+        self.assertEqual(profile.role, AdminProfile.ROLE_CHAIRMAN)
+        self.assertTrue(profile.is_active)
+
+    def test_creating_new_chairman_demotes_previous_chairman_to_member(self):
+        old_chairman_user = User.objects.create_user(username="chairman_old", password="pass12345")
+        old_chairman_profile = AdminProfile.objects.create(
+            user=old_chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+        )
+        self.client.post(
+            reverse("admin_panel:committee_add_chairman"),
+            {
+                "username": "chairman_new",
+                "email": "chairman2@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        old_chairman_profile.refresh_from_db()
+        self.assertEqual(old_chairman_profile.role, AdminProfile.ROLE_MEMBER)
+        self.assertTrue(old_chairman_profile.is_active)
+        new_chairman_profile = AdminProfile.objects.get(user__username="chairman_new")
+        self.assertEqual(new_chairman_profile.role, AdminProfile.ROLE_CHAIRMAN)
+
+    def test_chairman_creates_member(self):
+        chairman_user = User.objects.create_user(username="chairman_active", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(
+            reverse("admin_panel:committee_add_member"),
+            {
+                "username": "member_one",
+                "email": "member1@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+        )
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        profile = AdminProfile.objects.get(user__username="member_one")
+        self.assertEqual(profile.role, AdminProfile.ROLE_MEMBER)
+
+    def test_member_cannot_create_chairman(self):
+        member_user = User.objects.create_user(username="member_blocked2", password="pass12345")
+        AdminProfile.objects.create(user=member_user, role=AdminProfile.ROLE_MEMBER, is_active=True)
+        self.client.logout()
+        self.client.force_login(member_user)
+        response = self.client.get(reverse("admin_panel:committee_add_chairman"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_chairman_cannot_create_chairman(self):
+        chairman_user = User.objects.create_user(username="chairman_cant_promote", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.get(reverse("admin_panel:committee_add_chairman"))
+        self.assertRedirects(response, reverse("admin_panel:dashboard"))
+
+    def test_chairman_deactivates_any_member(self):
+        chairman_user = User.objects.create_user(username="chairman_deactivator", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        member_user = User.objects.create_user(username="member_to_deactivate", password="pass12345")
+        member_profile = AdminProfile.objects.create(
+            user=member_user, role=AdminProfile.ROLE_MEMBER, is_active=True
+        )
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(reverse("admin_panel:committee_deactivate", args=[member_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        member_profile.refresh_from_db()
+        self.assertFalse(member_profile.is_active)
+
+    def test_chairman_cannot_deactivate_self(self):
+        chairman_user = User.objects.create_user(username="chairman_self", password="pass12345")
+        chairman_profile = AdminProfile.objects.create(
+            user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+        )
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(reverse("admin_panel:committee_deactivate", args=[chairman_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        chairman_profile.refresh_from_db()
+        self.assertTrue(chairman_profile.is_active)
+
+    def test_deactivated_member_can_be_reactivated(self):
+        member_user = User.objects.create_user(username="member_reactivate", password="pass12345")
+        member_profile = AdminProfile.objects.create(
+            user=member_user, role=AdminProfile.ROLE_MEMBER, is_active=False
+        )
+        response = self.client.post(reverse("admin_panel:committee_reactivate", args=[member_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        member_profile.refresh_from_db()
+        self.assertTrue(member_profile.is_active)
+
+    def test_committee_list_shows_superuser_section_to_superuser(self):
+        response = self.client.get(reverse("admin_panel:committee_list"))
+        self.assertContains(response, "hod_super")
+
+    def test_committee_list_hides_superuser_section_from_chairman(self):
+        chairman_user = User.objects.create_user(username="chairman_viewer", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.get(reverse("admin_panel:committee_list"))
+        self.assertNotContains(response, "hod_super")
+
+    def test_reactivating_a_superuser_profile_is_rejected(self):
+        chairman_user = User.objects.create_user(username="chairman_vs_super", password="pass12345")
+        AdminProfile.objects.create(user=chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        superuser_profile = AdminProfile.objects.create(user=self.superuser, role=None, is_active=True)
+        self.client.logout()
+        self.client.force_login(chairman_user)
+        response = self.client.post(reverse("admin_panel:committee_reactivate", args=[superuser_profile.pk]))
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        superuser_profile.refresh_from_db()
+        self.assertTrue(superuser_profile.is_active)  # unchanged, was already True — the point is no crash/bypass
+
+    def test_reactivating_a_stale_chairman_demotes_the_current_active_chairman(self):
+        old_chairman_user = User.objects.create_user(username="chairman_stale", password="pass12345")
+        old_chairman_profile = AdminProfile.objects.create(
+            user=old_chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=False
+        )
+        current_chairman_user = User.objects.create_user(username="chairman_current", password="pass12345")
+        current_chairman_profile = AdminProfile.objects.create(
+            user=current_chairman_user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True
+        )
+        response = self.client.post(
+            reverse("admin_panel:committee_reactivate", args=[old_chairman_profile.pk])
+        )
+        self.assertRedirects(response, reverse("admin_panel:committee_list"))
+        old_chairman_profile.refresh_from_db()
+        current_chairman_profile.refresh_from_db()
+        self.assertTrue(old_chairman_profile.is_active)
+        self.assertEqual(old_chairman_profile.role, AdminProfile.ROLE_CHAIRMAN)
+        self.assertEqual(current_chairman_profile.role, AdminProfile.ROLE_MEMBER)
+
+
+class AdminRoleFlagsContextProcessorTests(TestCase):
+    def test_member_cannot_see_elections_or_committee_links(self):
+        user = User.objects.create_user(username="nav_member", password="pass12345")
+        AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_MEMBER, is_active=True)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertNotContains(response, reverse("admin_panel:election_list"))
+        self.assertNotContains(response, reverse("admin_panel:committee_list"))
+
+    def test_chairman_sees_elections_and_committee_links(self):
+        user = User.objects.create_user(username="nav_chairman", password="pass12345")
+        AdminProfile.objects.create(user=user, role=AdminProfile.ROLE_CHAIRMAN, is_active=True)
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, reverse("admin_panel:election_list"))
+        self.assertContains(response, reverse("admin_panel:committee_list"))
+
+    def test_superuser_sees_elections_and_committee_links(self):
+        user = User.objects.create_superuser(username="nav_super", password="pass12345", email="s@example.com")
+        self.client.force_login(user)
+        response = self.client.get(reverse("admin_panel:dashboard"))
+        self.assertContains(response, reverse("admin_panel:election_list"))
+        self.assertContains(response, reverse("admin_panel:committee_list"))

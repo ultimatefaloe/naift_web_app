@@ -41,4 +41,9 @@ urlpatterns = [
         views.ElectionPublishResultsView.as_view(),
         name="election_publish_results",
     ),
+    path("committee/", views.CommitteeListView.as_view(), name="committee_list"),
+    path("committee/add-chairman/", views.ChairmanCreateView.as_view(), name="committee_add_chairman"),
+    path("committee/add-member/", views.MemberCreateView.as_view(), name="committee_add_member"),
+    path("committee/<int:pk>/deactivate/", views.AdminDeactivateView.as_view(), name="committee_deactivate"),
+    path("committee/<int:pk>/reactivate/", views.AdminReactivateView.as_view(), name="committee_reactivate"),
 ]

@@ -26,7 +26,7 @@ class CorePagesTests(TestCase):
 class HomeMarqueeTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_marquee", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
 
     def test_no_election_shows_no_marquee(self):
         response = self.client.get(reverse("core:home"))
@@ -72,7 +72,7 @@ class HomeMarqueeTests(TestCase):
 class NavVoteLinkTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_nav_vote_link", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
         Election.objects.create(
             session="2026/2027",
             start_time="2026-11-01T09:00:00Z",
@@ -89,7 +89,7 @@ class NavVoteLinkTests(TestCase):
 class HomeVotingVisibilityTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_voting_visibility", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
 
     def test_vote_now_hero_button_hidden_when_no_ongoing_election(self):
         response = self.client.get(reverse("core:home"))

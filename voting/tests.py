@@ -46,7 +46,7 @@ class StudentModelTests(TestCase):
 class VoteModelTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_voting1", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         self.position = Position.objects.create(title="President", modified_by=admin_profile)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -183,7 +183,7 @@ class VoteEntryTests(TestCase):
         session["student_id"] = self.student.id
         session.save()
         user = User.objects.create_user(username="admin_voting2", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
 
     def test_no_ongoing_election_shows_no_election_page(self):
         response = self.client.get(reverse("voting:vote_entry"))
@@ -232,7 +232,7 @@ class WizardStepTests(TestCase):
         session["student_id"] = self.student.id
         session.save()
         user = User.objects.create_user(username="admin_voting3", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         self.position = Position.objects.create(title="President", modified_by=admin_profile)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -286,7 +286,7 @@ class WizardStepEditModeTests(TestCase):
         session["student_id"] = self.student.id
         session.save()
         user = User.objects.create_user(username="admin_voting_edit", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         self.election = Election.objects.create(
             session="2026/2027",
             start_time="2026-11-01T09:00:00Z",
@@ -384,7 +384,7 @@ class WizardStepEditModeTests(TestCase):
 class ResultsViewTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_voting5", password="pass12345")
-        self.admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        self.admin_profile = AdminProfile.objects.create(user=user)
         self.position = Position.objects.create(title="President", modified_by=self.admin_profile)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -544,7 +544,7 @@ class WizardReviewTests(TestCase):
         session["student_id"] = self.student.id
         session.save()
         user = User.objects.create_user(username="admin_voting4", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         self.position = Position.objects.create(title="President", modified_by=admin_profile)
         self.election = Election.objects.create(
             session="2026/2027",
@@ -620,7 +620,7 @@ class WizardReviewTests(TestCase):
 class ResultsArchiveTests(TestCase):
     def setUp(self):
         user = User.objects.create_user(username="admin_voting6", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         self.published = Election.objects.create(
             session="2025/2026",
             start_time="2025-11-01T09:00:00Z",
@@ -783,7 +783,7 @@ class VotingNavTests(TestCase):
 
     def test_nav_shows_vote_link_when_election_is_ongoing(self):
         user = User.objects.create_user(username="admin_voting_nav_ongoing", password="pass12345")
-        admin_profile = AdminProfile.objects.create(user=user, is_admin=True)
+        admin_profile = AdminProfile.objects.create(user=user)
         Election.objects.create(
             session="2026/2027",
             start_time="2026-11-01T09:00:00Z",
